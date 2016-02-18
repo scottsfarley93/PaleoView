@@ -1,10 +1,39 @@
 /* Scott Farley, 2015 */
 #map{
 	height: 100%;
-	width: 100%;
+	border-style: solid;
 }
 
 html, body{
 	height:90%;
 	width:100%;
 }
+
+
+#detailsPanel{
+	height:100%;
+}
+#diagram{
+	margin-top: 5%;
+}
+
+.row{
+	margin-left: 1% !important;
+}
+#mainHolder{
+	height:100% !important;
+}
+
+
+.axis path, .axis line{
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.line{
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
+

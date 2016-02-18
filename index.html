@@ -15,11 +15,50 @@
 	</head>
 
 	<body>
-		<span><h1 class='page-header'>Leaflet Lab <strong class='text-muted small'>Module #4</strong></h1></span>
-		
-	
-		<div id='map'></div>
-		
+		<h1>Quaternary Paleoecology Data Viewer</h1>
+		<div class='row'>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus rhoncus iaculis ante nec dignissim. Morbi lacinia laoreet scelerisque. Aenean ligula arcu, maximus et vehicula in, sollicitudin eget neque. Vestibulum tempor vel lacus et egestas. Curabitur interdum lacus lobortis ex mattis, ac lacinia metus tempus. Ut eu ex at mi venenatis sagittis non ac sapien. Integer in pellentesque ex. Nullam maximus quam ex, a commodo quam semper ut. Sed ornare metus vel ipsum rhoncus laoreet. Proin pharetra felis nunc, non interdum sem euismod ut. Aenean nec feugiat purus. Nullam at ipsum eu lorem blandit sodales. Aenean sagittis, massa in gravida sollicitudin, nisi est placerat tellus, vel commodo velit elit in risus.</p>
+			<hr/>
+			
+			<div id='controls' class='col-sm-8'>
+				<h4>Current Time Slice: </h4><span class='text-muted' id='timesliceLabel'>22000-21000</span>
+			</div>
+		</div>
+		<div id='mainHolder' class='row'>
+			<div id='map' class='col-sm-8'></div>
+			
+			
+			
+			
+			
+			
+			<div id='detailsPanel' class='col-sm-4'>
+
+			  <h2 id='siteName'></h2>
+			  <ul class="nav nav-tabs">
+			    <li class="active"><a data-toggle="tab" href="#home">Site</a></li>
+			    <li><a data-toggle="tab" href="#menu1">Diagram</a></li>
+			  </ul>
+			
+			  <div class="tab-content">
+			    <div id="home" class="tab-pane fade in active">
+				<h4>Species Name: </h4><span class='text-muted' id='speciesName'></span>
+				<h5>Common Name: </h5><span class='text-muted' id='commonName'></span>
+				<h5>Site Coordinates: </h5><span class='text-muted' id='siteCoords'></span>
+				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span>
+				</div>
+			    <div id="menu1" class="tab-pane fade">
+			      <div id='diagram'>
+			      </div>
+			    </div>
+			  </div>
+			</div>
+				
+
+				
+		</div> <!--Ends the main container-->
+			
+		</div>
 		<!---END Content-->
 		<!-- JQuery-->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
@@ -27,6 +66,8 @@
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 		<!--leaflet js/ minified-->
 		<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+		<!--d3 for the pollen diagram -->
+		<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<!--internal js-->
 		<script type="text/javascript" src="assets/js/main.js"></script>
 		<!--js for the leaflet tutorials-->
