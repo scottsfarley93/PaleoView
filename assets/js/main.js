@@ -20,6 +20,7 @@ globals.diagram.margins = {
 }
 globals.currentTime = 22000; //current age of the view
 globals.diagramTimeLine;
+globals.diagram.lines = {}
 
 
 /////////////////////////////////
@@ -38,10 +39,11 @@ function createMap(){
 		//create a map
 	globals.map = L.map('map').setView([40.82, -122.2], 4);
 	//add some tiles
-	var mapTiles = L.tileLayer('http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-		maxZoom: 16,
-		attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-	});
+	var mapTiles = L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/{type}/{z}/{x}/{y}.{ext}', {
+	type: 'sat',
+	ext: 'jpg',
+	subdomains: '1234'
+});
 	mapTiles.addTo(globals.map) //this adds it to the map
 }
 
@@ -56,7 +58,6 @@ function loadPoints(){
 					attVal = feature.properties[globals.defaultAttribute] //this is the default value for name of the attribute
 					 r = calcSymbolRadius(attVal); //set the appropriate radius
 					 geojsonMarkerOptions.radius = r //set the radius in the options --> done with prop symbols now
-					 
 					 //add popups on click
 					 var displayVal = Math.round(attVal * 100) / 100
 					 var siteName = feature.properties[globals.siteNameAttribute] // get the site name
@@ -93,6 +94,7 @@ function loadPoints(){
 			globals.jsonResponse = response;
 			console.log(globals.jsonResponse)
 			setView() // this sets the view based on the mean coordinates of the data
+			drawDiagram();
 		}, //end success method
 		dataType: "json",
 		error: function(error){
@@ -107,19 +109,17 @@ function loadPoints(){
 
 function calcSymbolRadius(val){
 	//calculate the correct symbol radius for the symbol, given a value
-	var scaleFactor = 25;
+	var scaleFactor = 50;
 	var area = Number(val) * scaleFactor; //cast to number
 	var radius = Math.sqrt(area/Math.PI);
 	return radius
 }
 
+
 var geojsonMarkerOptions = {
 	//geojson point styling
     radius: 8,
-    fillColor: "#ff7800",
-    color: "#000",
-    weight: 1,
-    opacity: 1,
+    fillColor: "steelblue",
     fillOpacity: 0.8
 };
 
@@ -141,10 +141,25 @@ function symbolClick(e){
 			values.push(val)
 		}
 	}
-	drawDiagram(values, globals.ages); //draw the diagram
+	globals.map.eachLayer(function(layer){
+		//sets the color to blue on click
+		if (layer.feature){
+			var props = layer.feature.properties;
+			var siteName = props[globals.siteNameAttribute]
+			if (siteName == name){
+				color = 'red'
+			}else{
+				color = 'steelblue'
+			}
+			layer.setStyle({'fillColor': color})
+		}
+	})
+	changeLineOnSymbolClick(name); //changes the diagram panel to reflect click
 }
 
-function drawDiagram(taxonVals, ages){
+function drawDiagram(){
+	//draws the pollen diagram
+	console.log("Drawing response.")
 	$("#diagram").empty(); //get rid of everything currently in there
 	//margins are already set
 	//set the width and height
@@ -155,6 +170,31 @@ function drawDiagram(taxonVals, ages){
 	globals.diagram.width = width
 	globals.diagram.height = height
 	
+	allVals = [];
+	maxVal = 0
+	//get everything in the right format
+	for (feature in globals.jsonResponse.features){
+		taxonVals = globals.jsonResponse.features[feature].properties
+		site = taxonVals['Site']
+		//lineVals = [{'value':0, 't': 22001}] //add beginning point
+		lineVals = []
+		for(var i =0; i<Object.keys(taxonVals).length; i++){
+			key = Object.keys(taxonVals)[i]
+			value = taxonVals[key]
+			age = +globals.ages[i]
+			if ((age != NaN) && (value != NaN) && (key != "Site")){
+				if (+value > maxVal){
+					maxVal = +value
+				}
+				lineVals.push({'value' : +value, 't': +age, 'Site': site})
+			}
+			
+		}
+		//lineVals.push({'value' : 0, 't': -1}); //and end to facilitate filling
+		allVals.push(lineVals)
+	}
+
+	
 	//set the scaling
 	var timeScale = d3.scale.linear()
 		.range([0, height])
@@ -162,8 +202,8 @@ function drawDiagram(taxonVals, ages){
 		.range([0, width])
 		
 		//finish mapping values to points
-	timeScale.domain(d3.extent(ages))
-	valScale.domain(d3.extent(taxonVals))
+	timeScale.domain(d3.extent(globals.ages))
+	valScale.domain([0, maxVal])
 	
 	globals.diagram.valScale = valScale
 	globals.diagram.timeScale = timeScale
@@ -177,16 +217,13 @@ function drawDiagram(taxonVals, ages){
 		.scale(timeScale)
 		.orient('left')
 		.ticks(10)
-	//get everything in the right format
-	lineVals = [{'value':0, 't': 22001}] //add beginning point
-	for(var i =0; i<taxonVals.length; i++){
-		lineVals.push({'value' : +taxonVals[i], 't': +ages[i]})
-	}
-	lineVals.push({'value' : 0, 't': -1}); //and end to facilitate filling
 	//set up the path function --> scale the values into the diagram constraints
 	var line = d3.svg.line()
-		.x(function(d){ return valScale(d.value)})
-		.y(function(d){return timeScale(d.t)})
+	.interpolate("monotone")
+		.x(function(d){ 
+			return +valScale(d.value)})
+		.y(function(d){
+			return +timeScale(+d.t)})
 	
 	//this is the svg canvas
 	var svg = d3.select("#diagram").append("svg")
@@ -194,15 +231,65 @@ function drawDiagram(taxonVals, ages){
 	.attr('width', width + globals.diagram.margins.left + globals.diagram.margins.right)
 	.append('g')
 		.attr('transform', 'translate(' + globals.diagram.margins.left + "," + globals.diagram.margins.top + ")")
-	
+		
+	var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0)
+    .append('text')
 
 
  	//draw the path	
-	svg.append('path')
+ 	for (l in allVals){
+ 		lineVals = allVals[l]
+ 		site = lineVals[0]['Site']
+ 		thisLine = svg.append('path')
 		.datum(lineVals)
 		.attr('class', 'line')
 		.attr('d', line)
-		.style("fill", 'lightsteelblue')
+		.style('opacity', 0.2)
+		.style('stroke-width', 3)
+		.attr('sitename', site)
+		.on('click', function(){
+			//make all the others more transparent
+			for (otherLine in globals.diagram.lines){
+				 p = globals.diagram.lines[otherLine]
+				 p.style("opacity", 0.2)
+				 p.style('stroke', 'steelblue')
+			}
+			//make this one full opaque
+			thisLine = d3.select(this)
+			thisLine.style('opacity', 1)
+			thisName = thisLine.attr('sitename')
+			updateMapSymbolsOnLineClick(thisName)
+			thisLine.style('stroke', 'red')
+			})
+		.on('dblclick', function(){
+			//zooms to point on line doubleclick
+			thisLine = d3.select(this)
+			thisName = thisLine.attr('sitename')
+			for (feature in globals.jsonResponse.features){
+				site = globals.jsonResponse.features[feature].properties['Site']
+				if (site == thisName){
+					coords = globals.jsonResponse.features[feature].geometry.coordinates
+					console.log(coords)
+					inverseCoords = [coords[1], coords[0]]
+					globals.map.setView(inverseCoords, 6)
+				}
+			}
+		})
+		.on('mouseover', function(){
+			thisLine = d3.select(this)
+			thisName = thisLine.attr('sitename')
+			console.log(thisName)
+			var mouseCoords = d3.mouse(this)
+			div.text(thisName)
+			div.attr('x', mouseCoords[0])
+			div.attr('y', mouseCoords[1])
+		})
+		globals.diagram.lines[site] = thisLine
+ 	}
+ 	
+
 		
 	//add a line to depict the current time view
 	globals.diagramTimeLine = svg.append('line')
@@ -228,7 +315,20 @@ function drawDiagram(taxonVals, ages){
 			.style('text-anchor', 'end')
 }
 
+function changeLineOnSymbolClick(site){
+	//this changes the line opacity when a prop symbol is clicked
+	for (otherLine in globals.diagram.lines){
+		 p = globals.diagram.lines[otherLine]
+		 p.style("opacity", 0.2)
+		
+	}
+	globals.diagram.lines[site].style('opacity', 1)
+	//make all the others more transparent
+}
+
 function createSliderWidget(numSteps){
+	//this creates the top slider bar
+	//todo: replace with pollen slider
 	html = "<div class='row col-sm-12' id='timeControlHolder'><b>Time Controls: <br />"
 	html += "<button><span class='glyphicon glyphicon glyphicon-backward' id='backward'></span></button>"
 	html += '<input id="timeControl" type="range">'
@@ -284,10 +384,12 @@ function prevTime(){
 }
 
 function updateTimeSliceLabel(val){
+	//changes the time period label
 	$("#timesliceLabel").text(val)
 }
 
 function updateDiagramTimeline(){
+	//changes the line reflecting current time slice on the pollen diagram pane;
 	globals.diagramTimeLine
 		.attr('y1',globals.diagram.timeScale(globals.currentTime))
 		.attr('y2', globals.diagram.timeScale(globals.currentTime))	
@@ -327,6 +429,27 @@ function setView(){
 	globals.map.setView([meanLng, meanLat])
 }
 
+function updateMapSymbolsOnLineClick(site){
+	//this changes the appearance of the proportional symbols when a pollen time series is clicked
+	map = globals.map
+	    map.eachLayer(function(layer){
+        if (layer.feature){
+
+             //access feature properties
+            var props = layer.feature.properties;
+            var siteName = props[globals.siteNameAttribute] // get the site name
+            if (siteName == site){
+            	color = 'red';
+            }else{
+            	color = 'steelblue'
+            }
+            layer.setStyle({'fillColor':color});
+            layer.bringToFront();
+			
+        };
+     });
+}
+
 function updatePropSymbols(map, attribute){
 	//this changes the proportional symbol radii and popups
     map.eachLayer(function(layer){
@@ -350,3 +473,43 @@ function updatePropSymbols(map, attribute){
         };
     });
 };
+
+// function loadData(name){
+	// url = "http://api.neotomadb.org/v1/data/"
+	// $.ajax("")
+// }
+
+//load the list of available taxa
+dropdownOptions = []
+$.ajax("assets/data/listfile.csv", {
+	success: function(response){
+		response = response.split(",")
+		for (item in response){
+			name = response[item]
+			if (name != "" || name !=","){
+				dropdownOptions.push(response[item]);
+			}
+			
+		}
+		//make the autocomplete
+		console.log(dropdownOptions)
+		$("#taxonSearch").autocomplete({
+			source: dropdownOptions
+		})
+	}
+})
+
+function loadDataset(name){
+	url = "assets/data/geojson/" + name
+	console.log(url)
+	$.ajax(url, {
+		success: function(response){
+			console.log(response)
+		},
+		error: function(){
+			console.log("ERROR!!!!")
+		}
+	})
+}
+
+

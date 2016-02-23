@@ -1,0 +1,8 @@
+SiteName,Latitude,Longitude,ageYounger,AgeOlder,Age,AgeType,Taxon,Value,Pct,Depth,Handle
+Camel Lake,30.266667,-85.016667,,,36519,Radiocarbon years BP,ARECACEAE,12,2.823529412,1333,CAMEL
+Laysan Island Lake,25.768,-171.7328,-54,-12,-40,Calibrated radiocarbon years BP,ARECACEAE,1,1.204819277,3,LAYSAN
+Laysan Island Lake,25.768,-171.7328,1754,3051,2389,Calibrated radiocarbon years BP,ARECACEAE,4,0.579710145,521.5,LAYSAN
+Laysan Island Lake,25.768,-171.7328,2769,4141,3459,Calibrated radiocarbon years BP,ARECACEAE,3,0.895522388,748.5,LAYSAN
+Laysan Island Lake,25.768,-171.7328,4179,5480,4848,Calibrated radiocarbon years BP,ARECACEAE,2,0.243309002,1046.5,LAYSAN
+Laysan Island Lake,25.768,-171.7328,5074,6244,5691,Calibrated radiocarbon years BP,ARECACEAE,1,0.162337662,1224.5,LAYSAN
+Laysan Island Lake,25.768,-171.7328,5543,6605,6113,Calibrated radiocarbon years BP,ARECACEAE,1,0.05730659,1315,LAYSAN

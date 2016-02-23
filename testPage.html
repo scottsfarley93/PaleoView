@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>Leaflet Lab</title>
+
+		<!--stylesheets-->
+		<!-- Bootstrap css -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+		<!--leaflet -->
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+		<link rel="stylesheet" href="assets/css/style.css">
+	</head>
+
+	<body>
+		<div class='row' id='mainHolder'>
+			<div id='titleRow' class='row col-sm-8'>
+				<img id='neotomaImage' src="http://www.neotomadb.org/images/site_graphics/Packrat.png" ></img>
+				<span class='strong text-muted large' id='title'>PaleoView</span>
+				<span id='searchHolder'>
+				<input id='taxonSearch' name='taxonSearch' placeholder="Search For Taxa" class="typeahead form-control input-lg" width='100' />
+				<button id='search' class='btn-primary btn-lg' ><span class='glyphicon glyphicon-search'</span></button>
+	
+			</div>
+			
+			<div id='map' class='col-sm-8' >
+				
+			</div> <!--End map-->
+		<div id='detailsPanel' class='col-sm-4'>
+			<button id='testClear' class='btn btn-lg btn-warning btn-alert'>Clear</button>
+			<h4>Species: </h4><span class='text-muted' id='speciesHeader'></span>
+			<h4>Current Year: </h4><span class='text-muted' id='currentTime'>22000</span>
+			  <ul class="nav nav-tabs">
+			    <li class="active"><a data-toggle="tab" href="#home">Diagram</a></li>
+			    <li><a data-toggle="tab" href="#menu1">Site</a></li>
+			    <li><a data-toggle="tab" href="#menu2">Taxon</a></li>
+			  </ul>
+			
+			  <div class="tab-content">
+			  	<div id="home" class=" tab-pane fade in active">
+			      <div id='diagram'>
+			     </div>
+			    </div>
+			    <div id="menu1" class="tab-pane fade">
+				<h5>Site Name: </h5><span class='text-muted' id='siteName'></span>
+				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span>
+				<h5>Latitude: </h5><span class='text-muted' id='siteLat'></span>
+				<h5>Longitude: </h5><span class='text-muted' id='siteLng'></span>
+				<h5>Neotoma Site ID: </h5><span class='text-muted' id='siteID'></span>
+				
+				</div>
+
+			   	<div id="menu2" class="tab-pane fade">
+			    <h4>Species Name: </h4><span class='text-muted' id='speciesName'></span>
+				<h5>Common Names: </h5>
+					<ul id='commonNameList'></ul>
+				<h5>Taxonomic Reference: </h5><span class='text-muted' id='reference'></span>
+				<h5>Taxonomy</h5>
+				<ul id='taxonomy' class='list-group'></ul>
+			    </div>
+			</div>
+			</div>
+				<img id='pic' height='150' width='150'></div>
+			
+		</div>
+		<!---END Content-->
+		<!-- JQuery-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+		<!-- autocomplete -->
+		<script src='assets/js/typeahead.js'></script>
+		<!-- Bootstrap js -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+		<!--leaflet js/ minified-->
+		<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+		<!--d3 for the pollen diagram -->
+		<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		
+		<script>
+		
+		var drag = d3.behavior.drag();
+		
+		var globals = {};
+		globals.Map = {};
+		globals.diagram = {};
+		globals.internals = {}
+		globals.internals.scalingRatio = 100;
+		globals.taxonData;
+		globals.taxonName;
+		//globals.defaultGeojson = "assets/data/pinus_contorta.geojson" // debugging only
+		globals.defaultAttribute = "22000-21000"
+		globals.currentTime = 22000
+		globals.diagram.margins = {
+			top: 20,
+			right:20,
+			bottom: 100,
+			left: 50
+		}
+		globals.ages = [23000, 22000, 21000, 20000,19000, 18000,17000,16000,15000,14000,13000,12000,11000,10000,9000,8000,7000,6000,5000,4000,3000,2000,1000, 0] //hard coded :( --> don't know how to get around this at this time.
+		globals.diagram.lines = {}
+		globals.colors = {}
+		globals.colors.blue = " #33757a"
+		globals.colors.red = "#421313"
+		
+		
+		var geojsonMarkerOptions = {
+			//geojson point styling
+		    radius: 8,
+		    fillColor: globals.colors.blue,
+		    fillOpacity: 1
+		};
+
+
+		
+			$(document).ready(function(){
+				//enter press to search
+		        $(document).bind('keypress', function(e) {
+		            if(e.keyCode==13){
+		                 $('#search').trigger('click');
+		             }
+		        });
+				//loads the list of data files available
+				$.ajax("assets/data/listfile.csv",{
+					success: loadSpeciesList
+				})
+				//click fires the event to get data from the server
+				$("#search").click(function(){
+					name = $("#taxonSearch").val();
+					loadSpeciesData(name)
+				})
+				//initialize the map
+				initMap(); 
+				
+			})
+			
+			
+			function loadSpeciesList(response){
+				//called when species list is returned
+				//handles autocomplete
+						listing = response.split(",")
+						culledListing = []
+						listing.forEach(function(item){
+							item = item.replace("  ", "")
+							item = item.replace('"', "")
+							if (item != '"'){
+								culledListing.push(item)
+							}
+							
+						})
+						
+						$('#taxonSearch').typeahead({
+							  hint: true,
+							  highlight: true,
+							  minLength: 1
+							},
+							{
+							  name: 'Taxa',
+							  source: substringMatcher(culledListing)
+							});
+					}
+					
+			function loadSpeciesData(name){
+				fName = name.replace(" ", "_")
+				fName = fName + ".geojson"
+				file = "assets/data/geojson/" + fName
+				//file = globals.defaultGeojson
+				$.ajax(file, {
+					//dataType: "json",
+					success: function(response){
+						console.log("Got taxon response from server.")
+						response = JSON.parse(response)
+						globals.taxonData = response //this is the geojson
+						globals.taxonName = name
+						clear() // clears any previous searches
+						addGeojsonToMap(); //this adds the circles
+						drawDiagram(); // this draws the pollen diagram
+						setViewForTaxon(); //this zooms to the map to the appropriate bounding box
+						updateTaxonMetadataPanel(); //this updates the taxonomy, etc on the panel
+						getTaxonPicture() //this gets the picture from phylopic
+						getTaxonInfo(); //gets taxonomy and common names from ITIS
+						changeTimeslice() //enables popovers and scales the values
+					}, error: function(xhr, status, error){
+						console.log("Couldn't get geojson")
+						console.log(xhr.responseText)				
+  				}, beforeSend: function(){
+						console.log(this.url)
+					}
+				})
+			}
+			
+			function initMap(){
+						//create a map
+			globals.map = L.map('map', { zoomControl:false }).setView([40.82, -122.2], 4);
+				//add some tiles
+				var mapTiles = L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/{type}/{z}/{x}/{y}.{ext}', {
+				type: 'sat',
+				ext: 'jpg',
+				subdomains: '1234'
+			});
+			mapTiles.addTo(globals.map) //this adds it to the map
+			}
+			
+		function setViewForTaxon(){
+			// //get the arithmetic mean of the points and set the view so that we see all points at once
+			// runningLat = 0
+			// runningLng = 0
+			// num = 0
+			// index = 0
+			// features = globals.taxonData.features
+			// while (index < features.length){
+				// item = features[index]
+				// var lat = +item.geometry.coordinates[0]
+				// var lng = +item.geometry.coordinates[1]
+				// runningLat += lat
+				// runningLng += lng
+				// num += 1
+				// index += 1
+			// }
+			// var meanLat = runningLat / num
+			// var meanLng = runningLng / num
+// 			
+			// globals.map.setView([meanLng, meanLat])
+		}
+		
+		function updateTaxonMetadataPanel(){
+			//updates the taxon info on the right side
+			$("#speciesName").text(globals.taxonName)
+			$("#speciesHeader").text(globals.taxonName)
+			
+		}
+		
+		function addGeojsonToMap(){
+			layer = L.geoJson(globals.taxonData, { // this adds the geojson to the map
+				pointToLayer: function (feature, latlng) { //makes polygon instead of default point icons which look bad.
+					// //first create the proportional symbols
+					// attVal = feature.properties[globals.defaultAttribute] //this is the default value for name of the attribute
+					 // r = calcSymbolRadius(attVal); //set the appropriate radius
+					 // geojsonMarkerOptions.radius = r //set the radius in the options --> done with prop symbols now
+					 displayVal = Math.round(feature.properties.defaultAttribute / 100) * 100
+					 circle =  L.circleMarker(latlng, geojsonMarkerOptions)
+					var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + feature.properties.Site + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
+        			 circle.bindPopup(popupContent)
+        			 circle.on({
+        			 	click: function(e){
+        			 		symbolClick(e.target.feature.properties.Site)
+        			 	},
+        			 	mouseover: function(){
+        			 		this.openPopup();
+        			 	},
+        			 	mouseout: function(){
+        			 		this.closePopup();
+        			 	}
+        			 })
+        			 return circle
+        			 }
+			}).addTo(globals.map)
+
+			
+		}
+		function drawDiagram(){
+	//draws the pollen diagram
+	$("#diagram").empty(); //get rid of everything currently in there
+	//set the width and height
+	var width = $("#detailsPanel").width() - globals.diagram.margins.left - globals.diagram.margins.right
+	var height = $("#detailsPanel").height()*.75 -  globals.diagram.margins.top - globals.diagram.margins.bottom;
+	
+	globals.diagram.width = width
+	globals.diagram.height = height
+	
+	allVals = [];
+	maxVal = 0
+	maxAge = 0
+	//get everything in the right format
+	for (feature in globals.taxonData.features){
+		taxonVals = globals.taxonData.features[feature].properties
+		site = taxonVals['Site']
+		//lineVals = [{'value':0, 't': 22001}] //add beginning point
+		lineVals = []
+		l = Object.keys(taxonVals).length
+		for(var i =0; i< l; i++){
+			key = Object.keys(taxonVals)[i]
+			if (key == "Site" || key == "Type"){
+				console.log(key)
+			}else{
+				value = taxonVals[key]
+				age = +globals.ages[i]
+				if ((age != NaN) && (value != NaN) && (key != "Site") && (key != "Type")){
+					if (+value > maxVal){
+						maxVal = +value
+					}
+					if (+age > maxAge){
+						maxAge = age
+					}
+					lineVals.push({'value' : +value, 't': +age, 'Site': site})
+				}
+			}
+			
+
+			
+		}
+		//lineVals.push({'value' : 0, 't': -1}); //and end to facilitate filling
+		allVals.push(lineVals)
+	}
+
+	
+	//set the scaling
+	var timeScale = d3.scale.linear()
+		.range([0, height])
+	var valScale = d3.scale.linear()
+		.range([0, width])
+		
+		//finish mapping values to points
+	timeScale.domain([0, maxAge])
+	valScale.domain([0, maxVal])
+	
+	globals.diagram.valScale = valScale
+	globals.diagram.timeScale = timeScale
+		
+	//create the axes
+	var xAxis = d3.svg.axis()
+		.scale(valScale)
+		.orient('bottom')
+	
+	var yAxis = d3.svg.axis()
+		.scale(timeScale)
+		.orient('left')
+		.ticks(10)
+	//set up the path function --> scale the values into the diagram constraints
+	var line = d3.svg.line()
+	//.interpolate("monotone")
+		.x(function(d){ 
+			return +valScale(+d.value)})
+		.y(function(d){
+			return +timeScale(+d.t)})
+	
+	//this is the svg canvas
+	var svg = d3.select("#diagram").append("svg")
+	.attr('height', height + globals.diagram.margins.top + globals.diagram.margins.bottom)
+	.attr('width', width + globals.diagram.margins.left + globals.diagram.margins.right)
+	.append('g')
+		.attr('transform', 'translate(' + globals.diagram.margins.left + "," + globals.diagram.margins.top + ")")
+		
+	var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0)
+    .append('text')
+
+
+ 	//draw the path	
+ 	for (l in allVals){
+ 		lineVals = allVals[l]
+ 		site = lineVals[0]['Site']
+ 		thisLine = svg.append('path')
+		.datum(lineVals)
+		.attr('class', 'line')
+		.attr('d', line)
+		.style('opacity', 0.2)
+		.style('stroke-width', 3)
+		.attr('sitename', site)
+		.on('click', function(e){
+			thisName = d3.select(this).attr('sitename')
+			for (line in globals.diagram.lines){
+				globals.diagram.lines[line].style('opacity', 0.2)
+				globals.diagram.lines[line].style('stroke', globals.colors.blue)
+			}
+			d3.select(this).style('stroke', globals.colors.red).style('opacity', 1)
+			updateSymbol(thisName)
+			updateSiteInformationPanel(thisName)
+			})
+		.on('dblclick', function(){
+			//zooms to point on line doubleclick
+			thisLine = d3.select(this)
+			thisName = thisLine.attr('sitename')
+			for (feature in globals.taxonData.features){
+				site = globals.taxonData.features[feature].properties['Site']
+				if (site == thisName){
+					coords = globals.taxonData.features[feature].geometry.coordinates
+					inverseCoords = [coords[1], coords[0]]
+					globals.map.setView(inverseCoords, 6)
+				}
+			}
+		})
+		.on('mouseover', function(){
+			// thisLine = d3.select(this)
+			// thisName = thisLine.attr('sitename')
+			// console.log(thisName)
+			// var mouseCoords = d3.mouse(this)
+			// div.text(thisName)
+			// div.attr('x', mouseCoords[0])
+			// div.attr('y', mouseCoords[1])
+		})
+		globals.diagram.lines[site] = thisLine
+ 	}
+ 	
+
+		
+	//add a line to depict the current time view
+     globals.diagram.timelineFunction = d3.svg.line()
+    .x(function(d) {
+      return d.x;
+    })
+    .y(function(d) {
+    	if (d.y > globals.diagram.height){
+    		return globals.diagram.height
+    	}
+    	if (d.y < 0){
+    		return 0
+    	}
+      return d.y;
+    })
+    .interpolate("linear");
+    
+     var data = [{
+        "x": 0,
+        "y": timeScale(22000)
+      }, {
+        "x": width,
+        "y": timeScale(22000)
+      }];
+    
+
+		
+
+		//setup the axes
+	svg.append('g')
+		.attr('class', 'x axis')
+		.attr('transform', 'translate(0,' + height + ")")
+		.call(xAxis)
+	
+	svg.append('g')
+		.attr('class', 'y axis')
+		.call(yAxis)
+		.append('text')
+			.attr('transform', 'rotate(-90)')
+			.attr('y', 6)
+			.attr('dy', '-.71em')
+			.text("Years B.P.")
+			.style('text-anchor', 'end')
+	
+	//this is the time slider
+	globals.diagram.timeLine = svg.append("path")
+        .attr("d", globals.diagram.timelineFunction(data))
+        .attr("stroke", "red")
+        .attr("stroke-width", 10)
+        .attr('opacity', 0.3)
+        .attr("fill", "red")
+        .attr('class', 'draggable')
+        .call(drag);
+    globals.diagram.timeLabel = d3.select(globals.diagram.timeline).append("text")
+    	.text("Label")
+    	.attr('x',100)
+    	.attr('y', 250)
+    	.style('color', 'black')
+			
+		} //end draw diagram
+		
+		var drag = d3.behavior.drag().on('drag', dragmove);
+		function dragmove() {
+			//this is the dragging on the timeline slider
+		    isDown = false;
+		    m3 = d3.mouse(this);
+			var newArray = [ {x: 0, y: m3[1]},
+	                 {x: globals.diagram.width, y: m3[1]} ];  
+		    globals.diagram.timeLine.attr('d', globals.diagram.timelineFunction(newArray)); 
+		   	//this is the current timeslice
+		   	globals.currentTime = globals.diagram.timeScale.invert(+m3[1])
+		   	if (globals.currentTime < 0){
+		   		globals.currentTime = 0
+		   	}
+		   	if (globals.currentTime > d3.max(globals.ages)){
+		   		globals.currentTime = d3.max(globals.ages)
+		   	}
+		    changeTimeslice()
+		}
+		
+
+		function getTaxonInfo(){
+				//use the itis.gov service for taxonomy
+				URI = "http://www.itis.gov/ITISWebService/jsonservice/searchForAnyMatch?jsonp=?"
+				$.ajax(URI, {
+					cache: true,
+					type: "POST",
+					crossDomain: true,
+					dataType: "json",
+					data: {"srchKey" : globals.taxonName},
+					success: function(response){
+						matchList = response['anyMatchList']
+						if (matchList != null){
+							firstItem = matchList[0]
+							commonNamesList = firstItem['commonNameList']['commonNames']
+							for (cn in commonNamesList){
+								common = commonNamesList[cn]
+								if (common['language'] == "English"){
+									name = common['commonName']
+									$("#commonNameList").append("<li class='list-group-item text-muted'>" + name + "</li>")
+								}
+							}
+							$("#reference").text(firstItem['author'])
+							globals.tsn = firstItem['tsn'] // this is the itis id
+							getTaxonParent(globals.tsn)
+							
+						}
+						
+					}
+
+				})
+			}
+		function getTaxonParent(itis){
+			$("#taxonomy").empty()
+			URI = "http://www.itis.gov/ITISWebService/jsonservice/getFullHierarchyFromTSN?jsonp=?"
+			$.ajax(URI, {
+					cache: true,
+					type: "POST",
+					crossDomain: true,
+					dataType: "json",
+					data: {"tsn": itis},
+					success: function(response){
+						taxList = response['hierarchyList']
+						if (taxList.length == 0 || taxList.length == 1){
+							$("#taxonomy").append("<p>Could not establish taxonomic hierarchy for this grouping.</p>")
+						}else{
+							for (item in taxList){
+								taxon = taxList[item]
+								taxRank = taxon['rankName']
+								taxName = taxon['taxonName']
+								$("#taxonomy").append("<li class='list-group-item'><span class='strong'>" + taxRank + "</span> <span class='text-muted'>" + taxName + "</span></li>")
+							}
+						}
+					}, error: function(xhr, status, error){
+						console.log(error)
+					}, beforeSend: function(){
+						console.log(this.url)
+					}
+			})
+		}
+		
+		function getTaxonPicture(){
+			//make api call to get identifying string
+			URIName = encodeURIComponent(globals.taxonName)
+			
+			URI = "http://phylopic.org/api/a/name/search?text=" + URIName
+			$.ajax(URI, { // this gets the uid for the species
+				success: function(response){
+					if (response['success']){
+						data = response['result']
+						uid = data[0]['canonicalName']['uid']
+						globals.taxonUID = uid
+						getPictureLocation(uid)
+					}
+				}, error: function(error){
+					console.log(error)
+				}, beforeSend: function(){
+					console.log("Sending name request to phylopic")
+				},
+				dataType: "json"
+				
+			})
+			function getPictureLocation(uid){
+				URI = "http://phylopic.org/api/a/name/" + uid + "/images?options=credit+svgFile+canonicalName"
+				$.ajax(URI, {
+					success: function(response){
+						if (response['success']){
+							result = response['result']
+							console.log(result)
+							picFound = false
+							//check if the response returned a svgFile for us to use
+							samePics = result['same']
+							for (pic in samePics){ //listed as the same taxa
+								console.log("Checking for svg of same taxon")
+								if (samePics[pic]['svgFile'] != null){
+									pic = samePics[pic]['svgFile']['url']
+									picFound = true
+									break
+								}
+							}
+							if (!picFound){ // look for higher taxa
+								for (pic in result['supertaxa']){
+									console.log("Checking for svg of higher taxon")
+									thisPic = result['supertaxa'][pic]
+									if (thisPic['svgFile'] != null){
+										picFound = true
+										pic = thisPic['svgFile']['url']
+										break
+									}
+								}
+								
+							}
+							if (!picFound){ // look in a couple other places
+								console.log("Checking for svg of associated taxon")
+								for (pic in result['other']){
+									
+									thisPic = result['other'][pic]
+									if (thisPic['svgFile'] != null){
+										picFound = true
+										pic = thisPic['svgFile']['url']
+										break
+									}
+								}
+								
+							}
+					if (!picFound){ // try other formats (png)
+						console.log("Checking for png of same taxon")
+								for (pic in result['same']){
+									thisPic = result['same'][pic]
+									if (thisPic['pngFile'] != null){
+										picFound = true
+										pic = thisPic['pngFile']['url']
+										break
+									}
+								}	
+							}
+					if (!picFound){ // try other formats (png)
+						console.log("Checking for png of higher taxon")
+								for (pic in result['supertaxa']){
+									thisPic = result['supertaxa'][pic]
+									if (thisPic['pngFile'] != null){
+										picFound = true
+										pic = thisPic['pngFile']['url']
+										break
+									}
+								}	
+							}
+							
+							if (!picFound){ //if we get to this point, we've exhausted all of our other options
+								$("#pic").append("Couldn't find a suitable picture.")
+								console.log("Couldn't find picture")
+							}else{
+								//get the first picture listed
+								setPicture(pic)	
+							}
+
+						}
+					},
+					error: function(error){
+						console.log(error);
+					}, 
+					beforeSend: function(){
+						console.log("Getting picture location for uid: " + uid)
+					}
+				})
+			function setPicture(pic){
+				URI = "http://phylopic.org" + pic //this is where the picture is on the phylopic server
+				$("#pic").attr('src', URI) //set the picture in our HTML
+			} //end setPicture
+			}//end getPictureLocation
+		}//end getTaxonPicture()
+		
+		
+		function updateSiteInformationPanel(site){
+			function getSiteFromNeotoma(site){
+				URI = "http://api.neotomadb.org/v1/data/sites"
+				//find the bounding box to make sure we get the right site from neotomadb
+				for (f in globals.taxonData.features){
+					loc = globals.taxonData.features[f].properties.Site
+					if (site == loc){
+						coords = globals.taxonData.features[f].geometry.coordinates
+						lat = coords[1]
+						lng = coords[0]
+						latN = lat + 5
+						latS = lat - 5
+						lngW = lng - 5
+						lngE = lng + 5
+						s = lngW + "," + latS + "," + lngE + "," + latN
+						break
+					}
+				}		
+				$.ajax(URI, {
+					data: {
+						sitename : site,
+						loc: lngW + "," + latS + "," + lngE + "," + latN
+					},
+					crossDomain: true,
+					type: "POST",
+					cache: true,
+					dataType: "jsonp",
+					success: function(response){
+						console.log("Got neotoma Return")
+						if (response['success']){
+							sites = response['data']
+							thisSite = sites[0]
+							//update the html
+							$("#siteName").text(thisSite['SiteName'])
+							$("#siteDesc").text(thisSite['SiteDescription'])
+							$("#siteLat").text(latN)
+							$("#siteLng").text(lngW)
+							$("#siteID").text(thisSite['SiteID'])
+							
+						}else{
+							console.log("Couldn't get data from neotoma")
+						}
+					},
+					error: function(xhr, status, error){
+						console.log(status)
+						console.log(error)
+					}
+				})
+			}
+			
+			getSiteFromNeotoma(site)
+			
+		}
+		
+		function updateLine(site){
+			
+			for (line in globals.diagram.lines){
+				thisLine = globals.diagram.lines[line];
+				thisLine.style('opacity', 0.2)
+				thisLine.style('stroke', globals.colors.blue)
+			}
+			theLine = globals.diagram.lines[site]
+			theLine.style('opacity', 1)
+			theLine.style('stroke', globals.colors.red)
+		}
+		
+		function symbolClick(e){
+			updateSiteInformationPanel(e) //get information from neotoma and put it in the panel
+			updateLine(e)
+			updateSymbol(e)
+		}
+		
+	
+		function updateSymbol(site){
+			globals.map.eachLayer(function (layer, feature){
+				if (layer.feature){
+					if (layer.feature.properties.Site == site){
+						layer.bringToFront(); // not sure if this is working?
+						layer.setStyle({'fillColor': globals.colors.red})
+						
+					}else{
+						layer.setStyle({'fillColor' : globals.colors.blue})
+						layer.bringToBack()
+					}
+				}
+			})
+		}
+		
+		
+		
+		function calcSymbolRadius(val){
+			//calculate the correct symbol radius for the symbol, given a value
+			var scaleFactor = 50;
+			var area = Number(val) * scaleFactor; //cast to number
+			var radius = Math.sqrt(area/Math.PI);
+			return radius	
+		}
+		
+		function changeTimeslice(){
+			//update the header showing current time
+			disTime = Math.round(globals.currentTime / 100) * 100
+			$("#currentTime").text(disTime)
+			
+			//changes the timeslice of the current view
+			globals.map.eachLayer(function(layer, feature){
+				if (layer.feature){
+			             //access feature properties
+			      
+			            var props = layer.feature.properties;
+			            var siteName = props["Site"] // get the site name
+			             r = interpolateSymbolValue(props, globals.currentTime)
+			            if (globals.currentTime == 0 && r == 0){
+			            	
+			            }else{
+			            rScaled = calcSymbolRadius(r)
+			            //sometimes the pull timeline will be out of bounds, so fail gracefully
+			            if (isNaN(rScaled)){
+			            	rScaled = 2
+			            	layer.setStyle({'color' : 'black'})
+			            }
+			            if (rScaled == 0){
+			            	rScaled = 2
+			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
+			            	
+			            }else{
+			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 1})
+			            }
+			            try{
+			            	 layer.setRadius(rScaled);
+			            }catch(err){
+			            	//pass
+			            	console.log(err);
+			            }
+			            var displayVal = Math.round(r * 100) / 100
+			           if (props.Type == "Pollen"){
+			           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
+  
+			           }else if (props.Type == "Mammals"){
+			           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
+			           }else{
+			           	popupContent = "<div>No Content Available</div>"
+			           }
+      			 layer.bindPopup(popupContent)
+			            }
+			           
+
+			        };
+			})
+		};
+		function interpolateSymbolValue(props, year){
+			//changes the symbol sizes when the timeslice is between two defined intervals
+			upperYear = Math.ceil(year/1000)*1000
+			try{
+				// if (upperYear > 22000){
+					// upperYear = 22000
+				// }
+				// if (upperYear < 0){
+					// upperyear = 0
+				// }
+				lowerYear = upperYear - 1000;
+				//get the index of the property in the array
+				indexUpper = globals.ages.indexOf(upperYear);
+				indexLower = globals.ages.indexOf(lowerYear);
+				if (indexUpper == -1 || indexLower == -1){
+					return 0
+				}
+				//get the attribute from the properties array/object
+				propertyKeys = Object.keys(props)
+				upperAttribute = propertyKeys[indexUpper]
+				lowerAttribute = propertyKeys[indexLower]
+				lowerValue = props[lowerAttribute]
+				upperValue = props[upperAttribute]
+				// //calculate the right value
+				// valDiff = upperValue - lowerValue
+				// timeDiff = upperYear - year
+				// timeFract = timeDiff / (upperYear - lowerYear)
+				// newVal = upperValue + (lowerValue - upperValue) * timeFract
+				// //fix some type errors that happen when the timeline is out of bounds.
+				// newVal = Number(newVal)
+				// if (isNaN(newVal)){
+					// newVal = 0
+				// }
+				val = Number(lowerValue)
+				// if (indexLower == -1){
+					// lowerValue = props[propertyKeys[globals.ages.indexOf(0)]]
+					// console.log("Changing min value")
+				// }
+				return val //DEBUG
+			}
+			catch(err){
+				console.log("Interpolation error.")
+				return 0
+			}
+
+		}
+		
+		function clear(){
+			//clears the d3 diagram and the layers on the map
+			
+			//remove map layers
+			globals.map.eachLayer(function(layer, feature){
+				if (layer.feature){
+					globals.map.removeLayer(layer);
+				}
+			})
+			console.log("Map cleared.")
+			for (line in globals.diagram.lines){
+				thisLine = globals.diagram.lines[line]
+				thisLine.remove()
+			}
+			console.log("Diagram cleared.")
+			$("#pic").attr("src", "")
+			$("#pic").empty();
+			//clear the site stuff
+			$("#siteName").text("")
+			$("#siteDesc").text("")
+			$("#siteLat").text("")
+			$("#siteLng").text("")
+			$("#siteID").text("")
+			console.log("Site panel cleared")
+			$("#taxonomy").empty()
+			$("#commonNameList").empty()
+		}
+		$("#testClear").click(function(){
+			clear()
+		})
+		
+		</script>
+		
+	</body>
+</html>

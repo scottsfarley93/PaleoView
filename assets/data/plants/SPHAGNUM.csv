@@ -1,0 +1,9 @@
+SiteName,Latitude,Longitude,ageYounger,AgeOlder,Age,AgeType,Taxon,Value,Pct,Depth,Handle
+Lac Montagnais,47.907778,-71.175,,,820,Radiocarbon years BP,SPHAGNUM,3,0.793650794,40,MONTAGNA
+Lac Montagnais,47.907778,-71.175,,,3691,Radiocarbon years BP,SPHAGNUM,3,0.621118012,180,MONTAGNA
+Cora Lake,46.165285,-95.32412,,,-26,Calendar years BP,SPHAGNUM,1,0.127959053,1,MNOTCL
+Cora Lake,46.165285,-95.32412,,,189,Calendar years BP,SPHAGNUM,2,0.487804878,70,MNOTCL
+Rock Lake,60.45365,-150.2538,185,697,415,Calibrated radiocarbon years BP,SPHAGNUM,1,0.306278714,30,ROCKAK
+Qually Pond,47.683165,-96.20294,4483,9564,7316,Calibrated radiocarbon years BP,SPHAGNUM,2,0.09557945,233,QUALLY
+Qually Pond,47.683165,-96.20294,7874,13788,12056,Calibrated radiocarbon years BP,SPHAGNUM,8,0.395061728,383,QUALLY
+Grizzly Lake,62.71064,-144.197185,4503,6324,5483,Calibrated radiocarbon years BP,SPHAGNUM,2,0.630914826,117,GRIZZLY
