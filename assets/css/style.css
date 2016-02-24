@@ -180,8 +180,5 @@ ul{
 	bottom:2%;
 	left: 2%;
 	float:left;
-	color:red;
-	stroke: yellow;
-	fill:yellow;
-	background-color:green;
+	background-color: #02232f;
 }
