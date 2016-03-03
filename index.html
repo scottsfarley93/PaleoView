@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
-		<title></title>
+		<title>Leaflet Lab</title>
 
 		<!--stylesheets-->
 		<!-- Bootstrap css -->
@@ -15,58 +15,136 @@
 	</head>
 
 	<body>
-		<h1>Quaternary Paleoecology Data Viewer</h1>
-		<div class='row'><br />
-			<input type='text' id='taxonSearch' name='taxonSearch' placeholder='Search for Taxa'/><button id='submitSearch'>Go!</button><br />
-			<div id='controls' class='col-sm-8'>
-				<h4>Current Time Slice: </h4><span class='text-muted' id='timesliceLabel'>22000-21000</span>
+		<div class='row' id='mainHolder'>
+			<div id='titleRow' class='row col-sm-8'>
+				<img id='neotomaImage' src="http://www.neotomadb.org/images/site_graphics/Packrat.png" ></img>
+				<span class='strong text-muted col-md-offset-1 col-sm-offset-3 col-xs-offset-4' id='title'>PaleoView</span>
+
 			</div>
-		</div>
-		<div id='mainHolder' class='row'>
-			<div id='map' class='col-sm-8'></div>
-
-			<div id='detailsPanel' class='col-sm-4'>
-
-			  <h2 id='siteName'></h2>
+			
+			<div id='map' class='col-sm-8' >
+				
+			</div> <!--End map-->
+		<div id='detailsPanel' class='col-sm-4'>
+			
+			<span id='searchHolder'>
+				<input id='taxonSearch' name='taxonSearch' placeholder="Search For Taxa" class="typeahead form-control input-lg" width='100' />
+				<button id='search' class='btn-primary btn-lg'  data-toggle="tooltip" title="Search for data" data-placement="bottom"><span class='glyphicon glyphicon-search'</span></button>
+				</span>
+			<br />
+			<h4>Species: </h4><span class='text-muted' id='speciesHeader'></span><br />
+			<h4>Current Year: </h4><span class='text-muted' id='currentTime'></span><br />
 			  <ul class="nav nav-tabs">
-			    <li class="active"><a data-toggle="tab" href="#home">Site</a></li>
-			    <li><a data-toggle="tab" href="#menu1">Diagram</a></li>
+			    <li class="active"><a data-toggle="tab" href="#home" data-toggle="tooltip" title="View abundance diagram">Diagram</a></li>
+			    <li><a data-toggle="tab" href="#menu1" data-toggle="tooltip" title="Show site metadata">Site</a></li>
+			    <li><a data-toggle="tab" href="#menu2" data-toggle="tooltip" title="View detail taxonomic information">Taxon</a></li>
+			    <li><a data-toggle="tab" href="#menu3" data-toggle="tooltip" title="View Map Options">Map</a></li>
+			    
 			  </ul>
 			
 			  <div class="tab-content">
-			    <div id="home" class="tab-pane fade in active">
-				<h4>Species Name: </h4><span class='text-muted' id='speciesName'></span>
-				<h5>Common Name: </h5><span class='text-muted' id='commonName'></span>
-				<h5>Site Coordinates: </h5><span class='text-muted' id='siteCoords'></span>
-				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span>
-				</div>
-			    <div id="menu1" class="tab-pane fade">
+			  	<div id="home" class=" tab-pane fade in active">
 			      <div id='diagram'>
-			      </div>
+			     </div>
 			    </div>
-			  </div>
-			</div>
+			    <div id="menu1" class="tab-pane fade">
+				<h5>Site Name: </h5><span class='text-muted' id='siteName'></span><br />
+				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span><br />
+				<h5>Latitude: </h5><span class='text-muted' id='siteLat'></span><br />
+				<h5>Longitude: </h5><span class='text-muted' id='siteLng'></span><br />
+				<h5>First Occurrence at Site: </h5><span id='maxYear' class='text-muted'></span><br />
+				<h5>Last Occurrence at Site: </h5><span id='minYear' class='text-muted'></span><br />
+				<h5>Time Rank: </h5><span id='rank' class='text-muted'></span><br />
+				<h5>Neotoma Site ID: </h5><span class='text-muted' id='siteID'></span><br />
 				
+				</div>
 
-				
-		</div> <!--Ends the main container-->
-			
+			   	<div id="menu2" class="tab-pane fade">
+				<h5>Common Names: </h5>
+					<ul id='commonNameList'></ul>
+				<h5>Taxonomic Reference: </h5><span class='text-muted' id='reference'></span><br />
+				<h5>Taxonomy</h5><br />
+				<ul id='taxonomy' class='list-group'></ul>
+				<span class='text-muted' id='taxStatus'></span>
+			    </div>
+			    <div id="menu3" class="tab-pane fade">
+			    	<h5>Legend</h5> <br />
+			    	<div id='legend' class='col-xs-6'></div><br />
+			    	<h5>Change Symbol Size</h5>
+			    	<input type='range' min='0' max='500' step='1' id='symbolSizeInput'/>
+			    	<br />
+			    	<h5 class='text-muted' id='maxValLabel'></h5><br />
+			    	<h5>Download Dataset</h5>
+			    	<button id='download' class='btn btn-sm  btn-success' data-toggle="tooltip" title="Download" data-placement="bottom"><span class='glyphicon glyphicon-download'></span></button>
+					<br />
+					<h5>Clear the Map</h5>
+					<button id='testClear' class='btn btn-sm btn-danger' data-toggle="tooltip" title="Clear the map" data-placement="bottom"><span class='glyphicon glyphicon-remove'></span></button>
+
+
+			    </div>
+			</div>
+			</div>
+
+		</div> <!--End main page content-->
+		<!-- Modal -->
+		<div id="startModal" class="modal fade" role="dialog">
+		  <div class="modal-dialog modal-lg">
+		
+		    <!-- Modal content-->
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal">&times;</button>
+		        <h4 class="modal-title">Welcome to PaleoView</h4><br />
+		      </div>
+		      <div class="modal-body">
+		        <h3 align="center">Explore</h3>
+		        <div  align="center" class='text-muted row' id='exploreSubtitle'><i>Click on a picture to get started!</i></div>
+
+		        <div class='row' align='center' id='quickStartPictures'>
+		        <button id='explore1' class='startImg'><img src='http://phylopic.org/assets/images/submissions/5b6462a4-5676-4892-94b4-0cd3c342fe07.128.png'/></button>
+		        <button id='explore2' class='startImg'><img src='http://phylopic.org/assets/images/submissions/79332a4c-e2bf-447e-a38d-f59bdec98c37.128.png'/></button>
+		        <button id='explore3' class='startImg'><img src='http://phylopic.org/assets/images/submissions/f86235e3-f437-4630-9e77-73732b9bcf41.128.png'/></button>
+        </div>
+        		        <div class='row' align='center' id='quickStartLabels'>
+		        	<label for='explore1'><i>Bison Bison</i></label>
+		        	<label for='explore1'><i>Picea</i></label>
+		        	<label for='explore1'><i>Cyperace</i></label>
+		        </div>
+		        <div class='row' align='center' id='timeLabels'>
+		        	<label for='explore1' class='text-muted timeLabel'><i>Present</i></label>
+		        	<label for='explore1' class='text-muted timeLabel'><i>12,000 BP</i></label>
+		        	<label for='explore1' class='text-muted timeLabel' ><i>2,000 BP</i></label>
+		        </div>
+		        
+		    <h3 align="center">Already an Expert?</h3>
+		    <div  align="center" class='text-muted row' id='exploreSubtitle'><i>Search for a taxon in the panel to the right.</i></div>
+      </div>
+      
+
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+		
+		  </div>
 		</div>
+				
+		
+		
 		<!---END Content-->
 		<!-- JQuery-->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-		<!-- jQuery UI has autocomplete -->
-		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<!-- autocomplete -->
+		<script src='assets/js/typeahead.js'></script>
 		<!-- Bootstrap js -->
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 		<!--leaflet js/ minified-->
 		<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 		<!--d3 for the pollen diagram -->
 		<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
-		<!--internal js-->
-		<script type="text/javascript" src="assets/js/main.js"></script>
-		<!--js for the leaflet tutorials-->
-		<script type="text/javascript" src="assets/js/tutorial.js"></script>
+		
+		<script src='assets/js/main.js'>
+		</script>
 		
 	</body>
 </html>

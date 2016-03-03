@@ -18,24 +18,28 @@
 		<div class='row' id='mainHolder'>
 			<div id='titleRow' class='row col-sm-8'>
 				<img id='neotomaImage' src="http://www.neotomadb.org/images/site_graphics/Packrat.png" ></img>
-				<span class='strong text-muted large' id='title'>PaleoView</span>
-				<span id='searchHolder'>
-				<input id='taxonSearch' name='taxonSearch' placeholder="Search For Taxa" class="typeahead form-control input-lg" width='100' />
-				<button id='search' class='btn-primary btn-lg' ><span class='glyphicon glyphicon-search'</span></button>
-	
+				<span class='strong text-muted col-md-offset-1 col-sm-offset-3 col-xs-offset-4' id='title'>PaleoView</span>
+
 			</div>
 			
 			<div id='map' class='col-sm-8' >
 				
 			</div> <!--End map-->
 		<div id='detailsPanel' class='col-sm-4'>
-			<button id='testClear' class='btn btn-lg btn-warning btn-alert'>Clear</button>
-			<h4>Species: </h4><span class='text-muted' id='speciesHeader'></span>
-			<h4>Current Year: </h4><span class='text-muted' id='currentTime'>22000</span>
+			
+			<span id='searchHolder'>
+				<input id='taxonSearch' name='taxonSearch' placeholder="Search For Taxa" class="typeahead form-control input-lg" width='100' />
+				<button id='search' class='btn-primary btn-lg'  data-toggle="tooltip" title="Search for data" data-placement="bottom"><span class='glyphicon glyphicon-search'</span></button>
+				</span>
+			<br />
+			<h4>Species: </h4><span class='text-muted' id='speciesHeader'></span><br />
+			<h4>Current Year: </h4><span class='text-muted' id='currentTime'></span><br />
 			  <ul class="nav nav-tabs">
-			    <li class="active"><a data-toggle="tab" href="#home">Diagram</a></li>
-			    <li><a data-toggle="tab" href="#menu1">Site</a></li>
-			    <li><a data-toggle="tab" href="#menu2">Taxon</a></li>
+			    <li class="active"><a data-toggle="tab" href="#home" data-toggle="tooltip" title="View abundance diagram">Diagram</a></li>
+			    <li><a data-toggle="tab" href="#menu1" data-toggle="tooltip" title="Show site metadata">Site</a></li>
+			    <li><a data-toggle="tab" href="#menu2" data-toggle="tooltip" title="View detail taxonomic information">Taxon</a></li>
+			    <li><a data-toggle="tab" href="#menu3" data-toggle="tooltip" title="View Map Options">Map</a></li>
+			    
 			  </ul>
 			
 			  <div class="tab-content">
@@ -44,26 +48,46 @@
 			     </div>
 			    </div>
 			    <div id="menu1" class="tab-pane fade">
-				<h5>Site Name: </h5><span class='text-muted' id='siteName'></span>
-				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span>
-				<h5>Latitude: </h5><span class='text-muted' id='siteLat'></span>
-				<h5>Longitude: </h5><span class='text-muted' id='siteLng'></span>
-				<h5>Neotoma Site ID: </h5><span class='text-muted' id='siteID'></span>
+				<h5>Site Name: </h5><span class='text-muted' id='siteName'></span><br />
+				<h5>Site Description: </h5><span class='text-muted' id='siteDesc'></span><br />
+				<h5>Latitude: </h5><span class='text-muted' id='siteLat'></span><br />
+				<h5>Longitude: </h5><span class='text-muted' id='siteLng'></span><br />
+				<h5>First Occurrence at Site: </h5><span id='maxYear' class='text-muted'></span><br />
+				<h5>Last Occurrence at Site: </h5><span id='minYear' class='text-muted'></span><br />
+				<h5>Time Rank: </h5><span id='rank' class='text-muted'></span><br />
+				<h5>Neotoma Site ID: </h5><span class='text-muted' id='siteID'></span><br />
 				
 				</div>
 
 			   	<div id="menu2" class="tab-pane fade">
-			    <h4>Species Name: </h4><span class='text-muted' id='speciesName'></span>
 				<h5>Common Names: </h5>
 					<ul id='commonNameList'></ul>
-				<h5>Taxonomic Reference: </h5><span class='text-muted' id='reference'></span>
-				<h5>Taxonomy</h5>
+				<h5>Taxonomic Reference: </h5><span class='text-muted' id='reference'></span><br />
+				<h5>Taxonomy</h5><br />
 				<ul id='taxonomy' class='list-group'></ul>
+				<span class='text-muted' id='taxStatus'></span>
+			    </div>
+			    <div id="menu3" class="tab-pane fade">
+			    	<h5>Legend</h5> <br />
+			    	<div id='legend' class='col-xs-6'></div><br />
+			    	<h5>Change Symbol Size</h5>
+			    	<input type='range' min='0' max='500' step='1' id='symbolSizeInput'/>
+			    	<br />
+			    	<h5 class='text-muted' id='maxValLabel'></h5><br />
+			    	<h5>Download Dataset</h5>
+			    	<button id='download' class='btn btn-sm  btn-success' data-toggle="tooltip" title="Download" data-placement="bottom"><span class='glyphicon glyphicon-download'></span></button>
+					<br />
+					<h5>Clear the Map</h5>
+					<button id='testClear' class='btn btn-sm btn-danger' data-toggle="tooltip" title="Clear the map" data-placement="bottom"><span class='glyphicon glyphicon-remove'></span></button>
+
+
 			    </div>
 			</div>
 			</div>
-				<img id='pic' height='150' width='150'></div>
-			
+			<div id='footer' class='row col-sm-3'><!-- This is overlaid on the map-->
+				<img id='pic' class='col-xs-6'></img> 
+				
+			</div>
 		</div>
 		<!---END Content-->
 		<!-- JQuery-->
@@ -78,19 +102,31 @@
 		<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		
 		<script>
+		/*TODO:
+		 * 1. migrate to external js file
+		 * 2. Rank behavior
+		 * 3. horizontal filter
+		 * 4. Styling of panel
+		 */
 		
+		
+		//global behaviors
 		var drag = d3.behavior.drag();
+		$(document).ready(function(){
+		    $('[data-toggle="tooltip"]').tooltip(); 
+		});
+				
 		
+		//global variables
 		var globals = {};
 		globals.Map = {};
 		globals.diagram = {};
-		globals.internals = {}
-		globals.internals.scalingRatio = 100;
 		globals.taxonData;
 		globals.taxonName;
+		globals.geojsonFile;//stores the location of the current geojson object
 		//globals.defaultGeojson = "assets/data/pinus_contorta.geojson" // debugging only
-		globals.defaultAttribute = "22000-21000"
-		globals.currentTime = 22000
+		globals.defaultAttribute = "2000-1000"
+		globals.currentTime = 1000
 		globals.diagram.margins = {
 			top: 20,
 			right:20,
@@ -102,13 +138,20 @@
 		globals.colors = {}
 		globals.colors.blue = " #33757a"
 		globals.colors.red = "#421313"
+		globals.symbolMultiplier = 50
+		globals.legend = {}
+		globals.taxonType;
+		globals.taxonomy = {}
+		globals.taxonomy.itisSkip = 0//how many itis records to skip to make sure we find a taxon in the correct kingdom
 		
+		//set the value of the slider to the current multiplier for symbol size
+		$("#symbolSizeInput").val(globals.symbolMultiplier)
 		
 		var geojsonMarkerOptions = {
 			//geojson point styling
-		    radius: 8,
+		    radius: 2,
 		    fillColor: globals.colors.blue,
-		    fillOpacity: 1
+		    fillOpacity: 0.5
 		};
 
 
@@ -168,7 +211,6 @@
 				$.ajax(file, {
 					//dataType: "json",
 					success: function(response){
-						console.log("Got taxon response from server.")
 						response = JSON.parse(response)
 						globals.taxonData = response //this is the geojson
 						globals.taxonName = name
@@ -179,12 +221,14 @@
 						updateTaxonMetadataPanel(); //this updates the taxonomy, etc on the panel
 						getTaxonPicture() //this gets the picture from phylopic
 						getTaxonInfo(); //gets taxonomy and common names from ITIS
-						changeTimeslice() //enables popovers and scales the values
+						createLegend() // creates a d3 legend
+						globals.geojsonFile = file
+						changeTimeslice() //enables popovers and scales the values --> must come after legend creation and map symbol creation
+						
 					}, error: function(xhr, status, error){
 						console.log("Couldn't get geojson")
 						console.log(xhr.responseText)				
   				}, beforeSend: function(){
-						console.log(this.url)
 					}
 				})
 			}
@@ -239,18 +283,19 @@
 					 // geojsonMarkerOptions.radius = r //set the radius in the options --> done with prop symbols now
 					 displayVal = Math.round(feature.properties.defaultAttribute / 100) * 100
 					 circle =  L.circleMarker(latlng, geojsonMarkerOptions)
+					 globals.taxonType = feature.properties.Type
 					var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + feature.properties.Site + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
         			 circle.bindPopup(popupContent)
         			 circle.on({
         			 	click: function(e){
         			 		symbolClick(e.target.feature.properties.Site)
         			 	},
-        			 	mouseover: function(){
-        			 		this.openPopup();
-        			 	},
-        			 	mouseout: function(){
-        			 		this.closePopup();
-        			 	}
+        			 	// mouseover: function(){
+        			 		// this.openPopup();
+        			 	// },
+        			 	// mouseout: function(){
+        			 		// this.closePopup();
+        			 	// }
         			 })
         			 return circle
         			 }
@@ -281,7 +326,7 @@
 		for(var i =0; i< l; i++){
 			key = Object.keys(taxonVals)[i]
 			if (key == "Site" || key == "Type"){
-				console.log(key)
+				//pass
 			}else{
 				value = taxonVals[key]
 				age = +globals.ages[i]
@@ -296,12 +341,12 @@
 				}
 			}
 			
-
-			
 		}
 		//lineVals.push({'value' : 0, 't': -1}); //and end to facilitate filling
 		allVals.push(lineVals)
 	}
+	globals.maxVal = maxVal
+	
 
 	
 	//set the scaling
@@ -397,26 +442,26 @@
 		
 	//add a line to depict the current time view
      globals.diagram.timelineFunction = d3.svg.line()
-    .x(function(d) {
-      return d.x;
-    })
-    .y(function(d) {
-    	if (d.y > globals.diagram.height){
-    		return globals.diagram.height
-    	}
-    	if (d.y < 0){
-    		return 0
-    	}
-      return d.y;
-    })
-    .interpolate("linear");
+	    .x(function(d) {
+	      return d.x;
+	    })
+	    .y(function(d) {
+	    	if (d.y > globals.diagram.height){
+	    		return globals.diagram.height
+	    	}
+	    	if (d.y < 0){
+	    		return 0
+	    	}
+	      return d.y;
+	    })
+	    .interpolate("linear");
     
      var data = [{
         "x": 0,
-        "y": timeScale(22000)
+        "y": timeScale(0)
       }, {
         "x": width,
-        "y": timeScale(22000)
+        "y": timeScale(0)
       }];
     
 
@@ -447,6 +492,7 @@
         .attr("fill", "red")
         .attr('class', 'draggable')
         .call(drag);
+        
     globals.diagram.timeLabel = d3.select(globals.diagram.timeline).append("text")
     	.text("Label")
     	.attr('x',100)
@@ -482,12 +528,12 @@
 					cache: true,
 					type: "POST",
 					crossDomain: true,
-					dataType: "json",
+					dataType: "jsonp",
 					data: {"srchKey" : globals.taxonName},
 					success: function(response){
 						matchList = response['anyMatchList']
 						if (matchList != null){
-							firstItem = matchList[0]
+							firstItem = matchList[globals.taxonomy.itisSkip]
 							commonNamesList = firstItem['commonNameList']['commonNames']
 							for (cn in commonNamesList){
 								common = commonNamesList[cn]
@@ -502,6 +548,12 @@
 							
 						}
 						
+					},
+					error: function(xhr, status, error){
+						console.log(xhr.responseText)
+						console.log(error)
+					}, beforeSend: function(){
+						console.log("Sending to " + this.url)
 					}
 
 				})
@@ -516,23 +568,40 @@
 					dataType: "json",
 					data: {"tsn": itis},
 					success: function(response){
+						altName = false
+						console.log("Got hierarchy response from itis ")
 						taxList = response['hierarchyList']
 						if (taxList.length == 0 || taxList.length == 1){
 							$("#taxonomy").append("<p>Could not establish taxonomic hierarchy for this grouping.</p>")
 						}else{
+							taxonomyHTML = []
 							for (item in taxList){
 								taxon = taxList[item]
 								taxRank = taxon['rankName']
 								taxName = taxon['taxonName']
-								$("#taxonomy").append("<li class='list-group-item'><span class='strong'>" + taxRank + "</span> <span class='text-muted'>" + taxName + "</span></li>")
+								taxonomyHTML.push("<li class='list-group-item'><span class='strong'>" + taxRank + "</span> <span class='text-muted'>" + taxName + "</span></li>")
+								if (taxRank == "Kingdom"){
+									//check if we got an animal hierarchy instead of the plant hierarchy --> usually happens with the pollen records
+									if ((taxName == "Animalia" && globals.taxonType == "Pollen") ||(taxName == "Plantae" && globals.taxonType == "Mammals") ){
+										//not the correct one
+										altName = true
+									}
+								}
+								//TODO: this causes errors???
+							}
+							if (!altNamt){
+							for (i in taxonomyHTML){
+								$("#taxonomy").append(taxonomyHTML[i])
+							}
+							}else{
+								$("#taxonomy").append("Oops... Found the Animalia taxonomy instead of the Plantae taxonomy.")
 							}
 						}
 					}, error: function(xhr, status, error){
+						console.log(xhr.responseText)
 						console.log(error)
-					}, beforeSend: function(){
-						console.log(this.url)
 					}
-			})
+			}) //end ajax
 		}
 		
 		function getTaxonPicture(){
@@ -550,8 +619,6 @@
 					}
 				}, error: function(error){
 					console.log(error)
-				}, beforeSend: function(){
-					console.log("Sending name request to phylopic")
 				},
 				dataType: "json"
 				
@@ -562,12 +629,10 @@
 					success: function(response){
 						if (response['success']){
 							result = response['result']
-							console.log(result)
 							picFound = false
 							//check if the response returned a svgFile for us to use
 							samePics = result['same']
 							for (pic in samePics){ //listed as the same taxa
-								console.log("Checking for svg of same taxon")
 								if (samePics[pic]['svgFile'] != null){
 									pic = samePics[pic]['svgFile']['url']
 									picFound = true
@@ -576,7 +641,6 @@
 							}
 							if (!picFound){ // look for higher taxa
 								for (pic in result['supertaxa']){
-									console.log("Checking for svg of higher taxon")
 									thisPic = result['supertaxa'][pic]
 									if (thisPic['svgFile'] != null){
 										picFound = true
@@ -587,7 +651,6 @@
 								
 							}
 							if (!picFound){ // look in a couple other places
-								console.log("Checking for svg of associated taxon")
 								for (pic in result['other']){
 									
 									thisPic = result['other'][pic]
@@ -600,7 +663,6 @@
 								
 							}
 					if (!picFound){ // try other formats (png)
-						console.log("Checking for png of same taxon")
 								for (pic in result['same']){
 									thisPic = result['same'][pic]
 									if (thisPic['pngFile'] != null){
@@ -611,7 +673,6 @@
 								}	
 							}
 					if (!picFound){ // try other formats (png)
-						console.log("Checking for png of higher taxon")
 								for (pic in result['supertaxa']){
 									thisPic = result['supertaxa'][pic]
 									if (thisPic['pngFile'] != null){
@@ -623,7 +684,7 @@
 							}
 							
 							if (!picFound){ //if we get to this point, we've exhausted all of our other options
-								$("#pic").append("Couldn't find a suitable picture.")
+								$("#pic").html("<p>Couldn't find a suitable picture.</p>")
 								console.log("Couldn't find picture")
 							}else{
 								//get the first picture listed
@@ -634,9 +695,6 @@
 					},
 					error: function(error){
 						console.log(error);
-					}, 
-					beforeSend: function(){
-						console.log("Getting picture location for uid: " + uid)
 					}
 				})
 			function setPicture(pic){
@@ -667,7 +725,7 @@
 				}		
 				$.ajax(URI, {
 					data: {
-						sitename : site,
+						sitename : site.substring(0, 5) + "%",
 						loc: lngW + "," + latS + "," + lngE + "," + latN
 					},
 					crossDomain: true,
@@ -677,6 +735,7 @@
 					success: function(response){
 						console.log("Got neotoma Return")
 						if (response['success']){
+							console.log(response)
 							sites = response['data']
 							thisSite = sites[0]
 							//update the html
@@ -693,12 +752,22 @@
 					error: function(xhr, status, error){
 						console.log(status)
 						console.log(error)
+					},
+					beforeSend: function(){
+						console.log(this.url)
 					}
 				})
 			}
 			
 			getSiteFromNeotoma(site)
 			
+			//get more contextual information
+			minYear = getMinYear(site)
+			maxYear = getMaxYear(site)
+			rank = getRankInTimeslice(site)
+			$("#minYear").text(maxYear) //this is backwards because of the mixing conventions --> is most recent min or max?  works for now.
+			$("#maxYear").text(minYear)
+			$("#rank").text(rank)
 		}
 		
 		function updateLine(site){
@@ -725,10 +794,10 @@
 				if (layer.feature){
 					if (layer.feature.properties.Site == site){
 						layer.bringToFront(); // not sure if this is working?
-						layer.setStyle({'fillColor': globals.colors.red})
+						layer.setStyle({'fillColor': globals.colors.red, "fillOpacity": 0.5})
 						
 					}else{
-						layer.setStyle({'fillColor' : globals.colors.blue})
+						layer.setStyle({'fillColor' : globals.colors.blue, "fillOpacity": 0.5})
 						layer.bringToBack()
 					}
 				}
@@ -739,7 +808,7 @@
 		
 		function calcSymbolRadius(val){
 			//calculate the correct symbol radius for the symbol, given a value
-			var scaleFactor = 50;
+			var scaleFactor = globals.symbolMultiplier;
 			var area = Number(val) * scaleFactor; //cast to number
 			var radius = Math.sqrt(area/Math.PI);
 			return radius	
@@ -748,18 +817,16 @@
 		function changeTimeslice(){
 			//update the header showing current time
 			disTime = Math.round(globals.currentTime / 100) * 100
-			$("#currentTime").text(disTime)
-			
+			$("#currentTime").text(disTime + " Years BP")
 			//changes the timeslice of the current view
 			globals.map.eachLayer(function(layer, feature){
 				if (layer.feature){
 			             //access feature properties
-			      
 			            var props = layer.feature.properties;
 			            var siteName = props["Site"] // get the site name
 			             r = interpolateSymbolValue(props, globals.currentTime)
 			            if (globals.currentTime == 0 && r == 0){
-			            	
+			            	//pass
 			            }else{
 			            rScaled = calcSymbolRadius(r)
 			            //sometimes the pull timeline will be out of bounds, so fail gracefully
@@ -772,14 +839,9 @@
 			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
 			            	
 			            }else{
-			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 1})
+			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
 			            }
-			            try{
-			            	 layer.setRadius(rScaled);
-			            }catch(err){
-			            	//pass
-			            	console.log(err);
-			            }
+			            layer.setRadius(rScaled)
 			            var displayVal = Math.round(r * 100) / 100
 			           if (props.Type == "Pollen"){
 			           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
@@ -795,6 +857,7 @@
 
 			        };
 			})
+			updateLegend() // reflect changes in the legend
 		};
 		function interpolateSymbolValue(props, year){
 			//changes the symbol sizes when the timeslice is between two defined intervals
@@ -852,12 +915,10 @@
 					globals.map.removeLayer(layer);
 				}
 			})
-			console.log("Map cleared.")
 			for (line in globals.diagram.lines){
 				thisLine = globals.diagram.lines[line]
 				thisLine.remove()
 			}
-			console.log("Diagram cleared.")
 			$("#pic").attr("src", "")
 			$("#pic").empty();
 			//clear the site stuff
@@ -866,13 +927,169 @@
 			$("#siteLat").text("")
 			$("#siteLng").text("")
 			$("#siteID").text("")
-			console.log("Site panel cleared")
 			$("#taxonomy").empty()
 			$("#commonNameList").empty()
+			globals.geojsonFile = undefined;
+			$("#legend").empty();
+			globals.legend = {}
+			globals.taxonomy.itisSkip = 0
+			$("#symbolSizeInput").val(50)
+			
+			
 		}
 		$("#testClear").click(function(){
 			clear()
 		})
+		
+		//get relative information about the context of an individual site at a particular time slice
+		
+		function getMinYear(sitename){
+			for (item in globals.taxonData.features){
+			if (globals.taxonData.features[item].properties['Site'] == sitename){				
+			site = globals.taxonData.features[item].properties
+						for (prop in site){
+							if (prop != "Site" && prop != "Type"){
+								if (site[prop] == 0){
+									continue;
+								}else{
+									//find the age at which it is no loger 0
+									keyList = Object.keys(site) 
+									i = keyList.indexOf(prop) //+ 2 //correct for Type and Site as properties
+									age = globals.ages[i]
+									return age
+								}
+							}
+						}
+				}
+			}
+			return -Infinity //couldnt find a match
+		}
+		
+		function getMaxYear(sitename){
+			//do the same thing as above but backwards through the properties
+			for (item in globals.taxonData.features){
+				site = globals.taxonData.features[item].properties
+				if (site['Site'] == sitename){
+					propKeys = Object.keys(site)
+					for (var i=propKeys.length-1; i>=0; i--){
+						prop = propKeys[i]//correct for type and site name
+						val = site[prop]
+						if (val == 0){
+							//pass
+						}else{
+							age = globals.ages[i];
+							return age
+						}
+					}
+				}
+			}
+			return -Infinity
+		}
+		
+		
+		function getRankInTimeslice(sitename){
+			//gets the relative ranking for this site in relation to all other known sites at this timeslice
+			upperYear = Math.ceil(globals.currentTime/1000)*1000
+			index = globals.ages.indexOf(upperYear)
+			timeVals = []
+			for (item in globals.taxonData.features){
+				site = globals.taxonData.features[item].properties
+				propList = Object.keys(site)
+				val = site[propList[index]]
+				timeVals.push({'Site': site['Site'], 'Value' : val})
+			}
+			s = timeVals.sort(function(d){ return d.Value}) //sort the list
+			//find the actual ranking
+			indexes = $.map(s, function(obj, index) {
+			    if(obj.Site == sitename) {
+			        return index;
+			    }
+			})
+			rank = indexes[0]//there shouldn't ever be more than one
+			rankRev = globals.taxonData.features.length - rank //flip the ordering
+			return s.indexOf(rankRev)
+		}
+		
+		
+		function getDownload(){
+			//opens a new tab with the raw data
+			win = window.open(globals.geojsonFile, "_blank")
+			win.focus();
+		}
+		$("#download").click(function(){
+			getDownload();
+		})
+		
+		//legend stuff
+		function createLegend(){
+			//find symbols sizes
+			rad = []
+			globals.map.eachLayer(function(layer, feature){
+				r = layer._radius
+				rad.push(r)
+			})
+			rSort = rad.sort()
+			
+			//find total maximum
+			totalMax = 0 //we don't care about anything except this maximum value
+			for (item in globals.taxonData.features){
+				props = globals.taxonData.features[item].properties
+				for (item in props){
+					if (Number(props[item]) > totalMax){
+						totalMax = Number(props[item])
+					}
+				}
+			}
+			
+			globals.totalMax = totalMax
+			maxRad = d3.max(rSort)
+			
+			globals.legend.legendHeight = totalMax * 2
+			globals.legend.legendWidth = totalMax * 2
+			
+			globals.legend.canvas = d3.select("#legend").append("svg")
+				.attr('width', globals.legend.legendWidth)
+				.attr('height',globals.legend.legendHeight)
+				
+			
+			globals.legend.maxCircle = globals.legend.canvas
+				.append('circle')
+					.attr('cx', globals.legend.legendWidth/2)
+					.attr('cy', globals.legend.legendHeight/2)
+					.attr('r', maxRad)
+					.style('fill', globals.colors.blue)
+					.style('opacity', 0.5)
+					
+		}
+		
+		function updateLegend(){
+			//find symbols sizes
+			rad = []
+			globals.map.eachLayer(function(layer, feature){
+				r = layer._radius
+				rad.push(r)
+			})
+			rSort = rad.sort()
+			
+			maxRad = d3.max(rSort)
+			globals.legend.maxCircle.attr('r', maxRad)
+
+		}
+		
+		function changeSymbolMultiplier(newMultiplier){
+			//change the actual symbols
+			globals.symbolMultiplier = newMultiplier
+			changeTimeslice() // this is what updates the symbol sizes even though we are not changing time
+		}
+		
+		
+		$("#symbolSizeInput").change(function(e){
+			//bind the event to the slider
+			newMultiplier = $("#symbolSizeInput").val()
+			changeSymbolMultiplier(newMultiplier)
+			$("#maxValLabel").text("Multiplier: " + newMultiplier + "x")
+		})
+		
 		
 		</script>
 		

@@ -56,18 +56,10 @@ html, body{
 	padding-top: 0%;
 }
 
-div.tooltip {	
-    position: absolute;			
-    text-align: center;			
-    width: 60px;					
-    height: 28px;					
-    padding: 2px;				
-    font: 12px sans-serif;		
-    background: lightsteelblue;	
-    border: 0px;		
-    border-radius: 8px;			
-    pointer-events: none;			
+button{
+	margin: 1px;
 }
+
 .tt-query, /* UPDATE: newer versions use tt-input instead of tt-query */
 .tt-hint {
     width: 396px;
@@ -165,7 +157,6 @@ ul{
 	position: absolute;
 }
 #title{
-	margin-left: 15%;
 	color: #421313;
 	font-size:25px;
 	font-weight:700;
@@ -174,11 +165,61 @@ ul{
 #search{
 	margin-left: 0%
 }
-#pic{
+
+h5, h4{
+	 display: inline;
+}
+
+#footer{
 	position: absolute;
 	z-index:11;
-	bottom:2%;
+	height: 150px;
+	bottom: 2%;
 	left: 2%;
-	float:left;
-	background-color: #02232f;
+	margin: 0%;
+	padding: 0%;
 }
+
+#legend{
+	z-index: 12;
+	height: 100%;
+	bottom: 0%;
+	margin: 0%;
+	padding: 0%;
+}
+.startImg{
+	width: 30%;
+	height: 150px;
+	margin-top: 5%;
+}
+label{
+	width: 30%;
+}
+#timeLabel{
+	margin-top: 0% !important;
+	padding-top: 0% !important;
+}
+#timeLabels{
+	margin-top: 0% !important;
+	padding-top: 0% !important;
+}
+#quickStartLabels{
+	margin-bottom: 0% !important;
+	padding-bottom: 0% !important;
+}
+.legend-container{
+	background-color: rgba(255, 255, 255, 0.5);
+	border-radius: 25px;
+	height: 200px;
+	width: 200px;
+}
+.picture-control{
+	height: 128px;
+	width: 128px;
+}
+
+#pic{
+	height: 128px;
+	width: 128px;
+}
+
