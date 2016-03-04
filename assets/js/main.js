@@ -2,6 +2,9 @@
  * 2. Rank behavior
  * 3. horizontal filter
  * 4. Styling of panel
+ * 5. Legend styles
+ * 6. diagram labeling
+ * 
  */
 
 //global behaviors
@@ -19,10 +22,10 @@ globals.taxonData;
 globals.taxonName;
 globals.geojsonFile;//stores the location of the current geojson object
 //globals.defaultGeojson = "assets/data/pinus_contorta.geojson" // debugging only
-globals.defaultAttribute = "2000-1000"
-globals.currentTime = 1000
+globals.defaultAttribute = "1000-present"
+globals.currentTime = 0
 globals.diagram.margins = {
-	top: 20,
+	top: 75,
 	right:20,
 	bottom: 100,
 	left: 50
@@ -46,7 +49,9 @@ var geojsonMarkerOptions = {
 	//geojson point styling
     radius: 2,
     fillColor: globals.colors.blue,
-    fillOpacity: 0.5
+    fillOpacity: 0.5,
+    opacity: 0.5,
+    color: "black"
 };
 
 
@@ -147,8 +152,10 @@ var geojsonMarkerOptions = {
 				getTaxonPicture() //this gets the picture from phylopic
 				getTaxonInfo(); //gets taxonomy and common names from ITIS
 				createLegend() // creates a d3 legend
-				globals.geojsonFile = file
+				initializeLegendChange(); //allows for resymbolization
+				globals.geojsonFile = file //facilitates dataset download
 				changeTimeslice() //enables popovers and scales the values --> must come after legend creation and map symbol creation
+				updateLegend() //makes sure the legend is correct when transitioning between species
 			}, error: function(xhr, status, error){
 				console.log("Couldn't get geojson")
 				console.log(xhr.responseText)				
@@ -173,13 +180,18 @@ var geojsonMarkerOptions = {
 	//add a container because the lab says to
 	var legendControl = L.Control.extend({
 		options: {
-			position: "bottomright"
+			position: "bottomleft"
 		},
 		onAdd: function(){
 			var container = L.DomUtil.create("div", 'legend-container');
-			$(container).append("<div id='legend' class='col-xs-6'></div>")
+			html = "<div id='controlHeader' align='center'><h4 id='speciesHeader'>Hello!</h4><br /><h5 id='currentTime' ></h5><br />"
+			
+			html += "</div><br />"
+			html += "<input type='range' min='0' max='100' step='1'id='symbolSizeInput'/>"
+			html += "<div id='legend' class='col-xs-6'></div>"
+			$(container).append(html)
 			//kill any mouse event listeners on the map
-            $(container).on('mousedown dblclick', function(e){
+            $(container).on('mousedown dblclick mousewheel', function(e){
                 L.DomEvent.stopPropagation(e);
             });
             console.log(container)
@@ -188,24 +200,6 @@ var geojsonMarkerOptions = {
 	})
 	globals.map.addControl(new legendControl())
 	
-		//add a container because the lab says to
-	var PictureControl = L.Control.extend({
-		options: {
-			position: "bottomleft"
-		},
-		onAdd: function(){
-			var container = L.DomUtil.create("div", 'picture-control');
-			$(container).append("<img id='pic'></div>")
-			//kill any mouse event listeners on the map
-            $(container).on('mousedown dblclick', function(e){
-                L.DomEvent.stopPropagation(e);
-            });
-            console.log(container)
-			return container;
-		}
-	})
-	
-	globals.map.addControl(new PictureControl())
 } //end of init map function
 	
 function setViewForTaxon(){
@@ -244,7 +238,9 @@ function addGeojsonToMap(){
 			// attVal = feature.properties[globals.defaultAttribute] //this is the default value for name of the attribute
 			 // r = calcSymbolRadius(attVal); //set the appropriate radius
 			 // geojsonMarkerOptions.radius = r //set the radius in the options --> done with prop symbols now
-			 displayVal = Math.round(feature.properties.defaultAttribute / 100) * 100
+			 
+			 displayVal = Math.round(feature.properties[globals.defaultAttribute] / 100) * 100
+			console.log(feature.properties[globals.defaultAttribute] )
 			 circle =  L.circleMarker(latlng, geojsonMarkerOptions)
 			 globals.taxonType = feature.properties.Type
 			var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + feature.properties.Site + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
@@ -271,7 +267,7 @@ function drawDiagram(){
 $("#diagram").empty(); //get rid of everything currently in there
 //set the width and height
 var width = $("#detailsPanel").width() - globals.diagram.margins.left - globals.diagram.margins.right
-var height = $("#detailsPanel").height()*.75 -  globals.diagram.margins.top - globals.diagram.margins.bottom;
+var height = $("#detailsPanel").height()*.85 -  globals.diagram.margins.top - globals.diagram.margins.bottom;
 
 globals.diagram.width = width
 globals.diagram.height = height
@@ -316,7 +312,7 @@ globals.maxVal = maxVal
 var timeScale = d3.scale.linear()
 	.range([0, height])
 var valScale = d3.scale.linear()
-	.range([0, width])
+	.range([0, width - 25])
 	
 	//finish mapping values to points
 timeScale.domain([0, maxAge])
@@ -440,21 +436,44 @@ svg.append('g')
 .attr('class', 'y axis')
 .call(yAxis)
 .append('text')
-	.attr('transform', 'rotate(-90)')
-	.attr('y', 0)
-	.attr('dy', '-.71em')
+	.attr('transform', 'rotate(-45)')
+	.attr('y', -10)
 	.text("Years B.P.")
-	.style('text-anchor', 'end')
+	.style('text-anchor', 'begin')
 
 //this is the time slider
 globals.diagram.timeLine = svg.append("path")
-.attr("d", globals.diagram.timelineFunction(data))
-.attr("stroke", "red")
-.attr("stroke-width", 10)
-.attr('opacity', 0.3)
-.attr("fill", "red")
-.attr('class', 'draggable')
-    .call(drag)
+	.attr("d", globals.diagram.timelineFunction(data))
+	.attr("stroke", "red")
+	.attr("stroke-width", 10)
+	.attr('opacity', 0.3)
+	.attr("fill", "red")
+	.attr('class', 'draggable')
+	    .call(drag)
+    
+   //add some extra labels for context
+	xlabel = svg.append('text')
+		.attr('x', 0)
+		.attr('y', height + 35)
+	
+	if (globals.taxonType == "Pollen"){
+		xlabel.text("Relative Abundance")
+	}else if (globals.taxonType == "Mammals"){
+		xlabel.text("Dated Individuals")
+	}
+	
+	timelabel1 = svg.append('text')
+		.attr('x', width-25)
+		.attr('y', timeScale(19000))
+		.attr('transform', 'rotate(-90 ' + (width - 20) + "," + timeScale(19000) + ')')
+		.attr('text-anchor', 'begin')
+		.text("Deglaciation")
+	timelabel2 = svg.append('text')
+		.attr('x', width-25)
+		.attr('y', timeScale(11700))
+		.attr('transform', 'rotate(-90 ' + (width - 20) + "," + timeScale(11700) + ')')
+		.attr('text-anchor', 'begin')
+		.text("Holocene")
 
 } //end draw diagram
 
@@ -562,103 +581,104 @@ function getTaxonParent(itis){
 }
 
 function getTaxonPicture(){
-	//make api call to get identifying string
-	URIName = encodeURIComponent(globals.taxonName)
-	
-	URI = "http://phylopic.org/api/a/name/search?text=" + URIName
-	$.ajax(URI, { // this gets the uid for the species
-		success: function(response){
-			if (response['success']){
-				data = response['result']
-				uid = data[0]['canonicalName']['uid']
-				globals.taxonUID = uid
-				getPictureLocation(uid)
-			}
-		}, error: function(error){
-			console.log(error)
-		},
-		dataType: "json"
-		
-	})
-	function getPictureLocation(uid){
-		URI = "http://phylopic.org/api/a/name/" + uid + "/images?options=credit+svgFile+canonicalName"
-		$.ajax(URI, {
-			success: function(response){
-				if (response['success']){
-					result = response['result']
-					picFound = false
-					//check if the response returned a svgFile for us to use
-					samePics = result['same']
-					for (pic in samePics){ //listed as the same taxa
-						if (samePics[pic]['svgFile'] != null){
-							pic = samePics[pic]['svgFile']['url']
-							picFound = true
-							break
-						}
-					}
-					if (!picFound){ // look for higher taxa
-						for (pic in result['supertaxa']){
-							thisPic = result['supertaxa'][pic]
-							if (thisPic['svgFile'] != null){
-								picFound = true
-								pic = thisPic['svgFile']['url']
-								break
-							}
-						}
-						
-					}
-					if (!picFound){ // look in a couple other places
-						for (pic in result['other']){
-							
-							thisPic = result['other'][pic]
-							if (thisPic['svgFile'] != null){
-								picFound = true
-								pic = thisPic['svgFile']['url']
-								break
-							}
-						}
-						
-					}
-			if (!picFound){ // try other formats (png)
-						for (pic in result['same']){
-							thisPic = result['same'][pic]
-							if (thisPic['pngFile'] != null){
-								picFound = true
-								pic = thisPic['pngFile']['url']
-								break
-							}
-						}	
-					}
-			if (!picFound){ // try other formats (png)
-						for (pic in result['supertaxa']){
-							thisPic = result['supertaxa'][pic]
-							if (thisPic['pngFile'] != null){
-								picFound = true
-								pic = thisPic['pngFile']['url']
-								break
-							}
-						}	
-					}
-					
-					if (!picFound){ //if we get to this point, we've exhausted all of our other options
-						$("#pic").html("<p>Couldn't find a suitable picture.</p>")
-						console.log("Couldn't find picture")
-					}else{
-						//get the first picture listed
-						setPicture(pic)	
-					}
-
-				}
-			},
-			error: function(error){
-				console.log(error);
-			}
-		})
-	function setPicture(pic){
-		URI = "http://phylopic.org" + pic //this is where the picture is on the phylopic server
-		$("#pic").attr('src', URI) //set the picture in our HTML
-	} //end setPicture
-	}//end getPictureLocation
+	return 
+	// //make api call to get identifying string
+	// URIName = encodeURIComponent(globals.taxonName)
+// 	
+	// URI = "http://phylopic.org/api/a/name/search?text=" + URIName
+	// $.ajax(URI, { // this gets the uid for the species
+		// success: function(response){
+			// if (response['success']){
+				// data = response['result']
+				// uid = data[0]['canonicalName']['uid']
+				// globals.taxonUID = uid
+				// getPictureLocation(uid)
+			// }
+		// }, error: function(error){
+			// console.log(error)
+		// },
+		// dataType: "json"
+// 		
+	// })
+	// function getPictureLocation(uid){
+		// URI = "http://phylopic.org/api/a/name/" + uid + "/images?options=credit+svgFile+canonicalName"
+		// $.ajax(URI, {
+			// success: function(response){
+				// if (response['success']){
+					// result = response['result']
+					// picFound = false
+					// //check if the response returned a svgFile for us to use
+					// samePics = result['same']
+					// for (pic in samePics){ //listed as the same taxa
+						// if (samePics[pic]['svgFile'] != null){
+							// pic = samePics[pic]['svgFile']['url']
+							// picFound = true
+							// break
+						// }
+					// }
+					// if (!picFound){ // look for higher taxa
+						// for (pic in result['supertaxa']){
+							// thisPic = result['supertaxa'][pic]
+							// if (thisPic['svgFile'] != null){
+								// picFound = true
+								// pic = thisPic['svgFile']['url']
+								// break
+							// }
+						// }
+// 						
+					// }
+					// if (!picFound){ // look in a couple other places
+						// for (pic in result['other']){
+// 							
+							// thisPic = result['other'][pic]
+							// if (thisPic['svgFile'] != null){
+								// picFound = true
+								// pic = thisPic['svgFile']['url']
+								// break
+							// }
+						// }
+// 						
+					// }
+			// if (!picFound){ // try other formats (png)
+						// for (pic in result['same']){
+							// thisPic = result['same'][pic]
+							// if (thisPic['pngFile'] != null){
+								// picFound = true
+								// pic = thisPic['pngFile']['url']
+								// break
+							// }
+						// }	
+					// }
+			// if (!picFound){ // try other formats (png)
+						// for (pic in result['supertaxa']){
+							// thisPic = result['supertaxa'][pic]
+							// if (thisPic['pngFile'] != null){
+								// picFound = true
+								// pic = thisPic['pngFile']['url']
+								// break
+							// }
+						// }	
+					// }
+// 					
+					// if (!picFound){ //if we get to this point, we've exhausted all of our other options
+						// $("#pic").html("<p>Couldn't find a suitable picture.</p>")
+						// console.log("Couldn't find picture")
+					// }else{
+						// //get the first picture listed
+						// setPicture(pic)	
+					// }
+// 
+				// }
+			// },
+			// error: function(error){
+				// console.log(error);
+			// }
+		// })
+	// function setPicture(pic){
+		// URI = "http://phylopic.org" + pic //this is where the picture is on the phylopic server
+		// $("#pic").attr('src', URI) //set the picture in our HTML
+	// } //end setPicture
+	// }//end getPictureLocation
 }//end getTaxonPicture()
 
 
@@ -785,32 +805,36 @@ function changeTimeslice(){
 	            if (globals.currentTime == 0 && r == 0){
 	            	//pass
 	            }else{
-	            
-	            rScaled = calcSymbolRadius(r)
-	            console.log(rScaled + " // " + r)
-	            //sometimes the pull timeline will be out of bounds, so fail gracefully
-	            if (isNaN(rScaled)){
-	            	rScaled = 2
-	            	layer.setStyle({'color' : 'black'})
-	            }
-	            if (rScaled == 0){
-	            	rScaled = 2
-	            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
-	            	
-	            }else{
-	            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
-	            }
-	            layer.setRadius(rScaled)
-	            var displayVal = Math.round(r * 100) / 100
-	           if (props.Type == "Pollen"){
-	           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
-  
-			           }else if (props.Type == "Mammals"){
-	           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
-	           }else{
-	           	popupContent = "<div>No Content Available</div>"
-	           }
-		 layer.bindPopup(popupContent)
+		           	if (r == 0){
+		           		rScaled = 0
+		           	}else{
+		           		rScaled = calcSymbolRadius(r)
+		           	}
+		            //sometimes the pull timeline will be out of bounds, so fail gracefully
+		            if (isNaN(rScaled)){
+		            	rScaled = 2
+		            	layer.setStyle({'color' : 'black'})
+		            	
+		            }
+		            if (rScaled == 0){
+		            	
+		            	rScaled = 2
+		            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
+		            	
+		            }else{
+		            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
+		            }
+		            layer.setRadius(rScaled)
+		            var displayVal = Math.round(r * 100) / 100
+		           if (props.Type == "Pollen"){
+		           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
+	  
+				           }else if (props.Type == "Mammals"){
+		           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
+		           }else{
+		           	popupContent = "<div>No Content Available</div>"
+		           }
+			 		layer.bindPopup(popupContent)
 	            }
 	           
 
@@ -820,6 +844,11 @@ function changeTimeslice(){
 };
 function interpolateSymbolValue(props, year){
 	//changes the symbol sizes when the timeslice is between two defined intervals
+	
+	if (year == 0){//fixes the default to zero behavior
+		return props[globals.defaultAttribute]
+	}
+	
 	upperYear = Math.ceil(year/1000)*1000
 	try{
 		// if (upperYear > 22000){
@@ -893,6 +922,7 @@ function clear(){
 	globals.legend = {}
 	globals.taxonomy.itisSkip = 0
 	$("#symbolSizeInput").val(50)
+	globals.symbolMultiplier = 50
 	
 	
 }
@@ -981,6 +1011,7 @@ $("#download").click(function(){
 
 //legend stuff
 function createLegend(){
+	//creates a legend that shows the size of symbols static through time.  
 	//find symbols sizes
 	rad = []
 	globals.map.eachLayer(function(layer, feature){
@@ -999,61 +1030,97 @@ function createLegend(){
 			}
 		}
 	}
+	
+	//these are the circle radii
 	rad1 = Math.sqrt(5 * globals.symbolMultiplier)
 	rad2 = Math.sqrt(10 * globals.symbolMultiplier)
 	rad3 = Math.sqrt(20 * globals.symbolMultiplier)
-	globals.legend.legendHeight = 200
-	globals.legend.legendWidth = 200
 	
+	divHeight = $(".legend-container").height()
+	
+	var suffix
+	if (globals.taxonType == "Pollen"){
+		suffix = "%"
+	}else{
+		suffix = " M.N.I."
+	}
+	//svg setup
+	globals.legend.legendHeight = divHeight / 2
+	globals.legend.legendWidth = $(".legend-control").width()
+	
+	//build the svg
 	globals.legend.canvas = d3.select("#legend").append("svg")
 		.attr('width', globals.legend.legendWidth)
 		.attr('height',globals.legend.legendHeight)
-		
+	
+	//calculate bottom of circle
+	globals.legend.bottom = globals.legend.legendHeight/2 + rad3	
 	
 	globals.legend.maxCircle = globals.legend.canvas
 		.append('circle')
-			.attr('cx', globals.legend.legendWidth/2 - 50)
-			.attr('cy', globals.legend.legendHeight/2)
+			.attr('cx', rad3)
+			.attr('cy', globals.legend.bottom - rad3)
 			.attr('r', rad3)
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
+			.style('stroke', 'black')
 			
-	globals.legend.canvas.append('text')
-		.attr('x', globals.legend.legendWidth/2)
+	globals.legend.maxText = globals.legend.canvas.append('text')
+		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 -20)
-		.text("20")
+		.text("20" + suffix)
 			
-	globals.legend.canvas.append('circle')
-			.attr('cx', globals.legend.legendWidth/2 - 50)
-			.attr('cy', globals.legend.legendHeight/2 - rad1 + rad2)
+	globals.legend.midCircle = globals.legend.canvas.append('circle')
+			.attr('cx', rad3)
+			.attr('cy', globals.legend.bottom - rad2)
 			.attr('r', rad2)
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
+			.style('stroke', 'black')
 			
-	globals.legend.canvas.append('text')
-		.attr('x', globals.legend.legendWidth/2)
+	globals.legend.midText = globals.legend.canvas.append('text')
+		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 -5)
-		.text("10")
+		.text("10" + suffix)
 			
-	globals.legend.canvas.append('circle')
-			.attr('cx', globals.legend.legendWidth/2 - 50)
-			.attr('cy', globals.legend.legendHeight/2 - rad1 + rad3)
+	globals.legend.minCircle = globals.legend.canvas.append('circle')
+			.attr('cx', rad3)
+			.attr('cy',globals.legend.bottom  - rad1)
 			.attr('r', rad1)
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
+			.style('stroke', 'black')
 			
-	globals.legend.canvas.append('text')
-		.attr('x', globals.legend.legendWidth/2)
+	globals.legend.minText =globals.legend.canvas.append('text')
+		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 +20)
-		.text("5")
+		.text("5" + suffix)
 			
 }
 
 function updateLegend(){
 	//update when symbol size changes
+	
+	//calculate new radii
+	rad1 = Math.sqrt(5 * globals.symbolMultiplier)
+	rad2 = Math.sqrt(10 * globals.symbolMultiplier)
+	rad3 = Math.sqrt(20 * globals.symbolMultiplier)
+	
+	//recalculate where the bottom is
+	globals.legend.bottom = globals.legend.legendHeight/2 + rad3
+	//set radii of circles and update the cy to make them all align at bottom
+	globals.legend.maxCircle.attr('r', rad3).attr('cy',globals.legend.bottom - rad3)
+	globals.legend.midCircle.attr('r', rad2).attr('cy',globals.legend.bottom - rad2)
+	globals.legend.minCircle.attr('r', rad1).attr('cy',globals.legend.bottom - rad1)
+	//adjust text
+	
+	
+	globals.legend.maxText.attr('x', rad3 * 2)
+	globals.legend.midText.attr('x', rad3 * 2)
+	globals.legend.minText.attr('x', rad3 * 2)
 	return
-
 }
+
 
 function changeSymbolMultiplier(newMultiplier){
 	//change the actual symbols
@@ -1062,11 +1129,15 @@ function changeSymbolMultiplier(newMultiplier){
 }
 
 
-$("#symbolSizeInput").change(function(e){
-	//bind the event to the slider
-	newMultiplier = $("#symbolSizeInput").val()
-	changeSymbolMultiplier(newMultiplier)
-	$("#maxValLabel").text("Multiplier: " + newMultiplier + "x")
-})
+function initializeLegendChange(){
+	//must be called after the legend is created to be able to change symbol size.
+		$("#symbolSizeInput").change(function(e){
+		//bind the event to the slider
+		newMultiplier = $("#symbolSizeInput").val() * 2
+		changeSymbolMultiplier(newMultiplier)
+	})
+}
+
+
 
 
