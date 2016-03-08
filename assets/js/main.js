@@ -2,9 +2,8 @@
  * 2. Rank behavior
  * 3. horizontal filter
  * 4. Styling of panel
- * 5. Legend styles
- * 6. diagram labeling
- * 
+ * 8. sealevel overlay
+ * 10. Intro
  */
 
 //global behaviors
@@ -27,13 +26,13 @@ globals.currentTime = 0
 globals.diagram.margins = {
 	top: 75,
 	right:20,
-	bottom: 100,
+	bottom: 50,
 	left: 50
 }
 globals.ages = [23000, 22000, 21000, 20000,19000, 18000,17000,16000,15000,14000,13000,12000,11000,10000,9000,8000,7000,6000,5000,4000,3000,2000,1000, 0] //hard coded :( --> don't know how to get around this at this time.
 globals.diagram.lines = {}
 globals.colors = {}
-globals.colors.blue = " #33757a"
+globals.colors.blue = "#33757a"
 globals.colors.red = "#421313"
 globals.symbolMultiplier = 50
 globals.legend = {}
@@ -41,6 +40,23 @@ globals.legend.legendValues = [5, 10, 20]
 globals.taxonType;
 globals.taxonomy = {}
 globals.taxonomy.itisSkip = 0//how many itis records to skip to make sure we find a taxon in the correct kingdom
+globals.icesheetsData;
+globals.displayIcesheets = false;
+
+
+//ice sheet data display options
+
+iceOptions = {
+	opacity: 0.7,
+	fillColor: 'white',
+	fillOpacity: 0.75,
+	color: 'gray'
+}
+inactiveIceOptions = {
+	opacity: 0,
+	fillColor: 'red',
+	fillOpacity: 0,
+}
 
 //set the value of the slider to the current multiplier for symbol size
 $("#symbolSizeInput").val(globals.symbolMultiplier)
@@ -81,6 +97,7 @@ var geojsonMarkerOptions = {
 		//initialize the map
 		initMap(); 
 		
+		
 		//open model on program start if not already dismissed
 		$('#startModal').modal('show')     
 		
@@ -89,12 +106,15 @@ var geojsonMarkerOptions = {
 			loadSpeciesData("Bison Bison")
 			$("#startModal").modal("hide")
 			$("#taxonSearch").val("Bison Bison")
+			globals.currentTime = 0
 		})
 		
 		$("#explore2").click(function(){
 			loadSpeciesData("Picea")
 			$("#startModal").modal("hide")
 			$("#taxonSearch").val("Picea")
+			globals.currentTime = 12000
+			globals.defaultAttribute = "13000-12000"
 		})
 		
 		
@@ -102,8 +122,12 @@ var geojsonMarkerOptions = {
 			loadSpeciesData("Cyperace")
 			$("#startModal").modal("hide")
 			$("#taxonSearch").val("Cyperace")
+			globals.currentTime = 2000
+			globals.defaultAttribute = "2000-1000"
 		})
-
+		//load ice sheet data here because it takes a hot minute
+		loadIceSheetData();
+		
 		
 	})
 	
@@ -154,7 +178,9 @@ var geojsonMarkerOptions = {
 				createLegend() // creates a d3 legend
 				initializeLegendChange(); //allows for resymbolization
 				globals.geojsonFile = file //facilitates dataset download
+				addIceSheetData() //add the overlay as invisible
 				changeTimeslice() //enables popovers and scales the values --> must come after legend creation and map symbol creation
+				showIceSheets(globals.currentTime)
 				updateLegend() //makes sure the legend is correct when transitioning between species
 			}, error: function(xhr, status, error){
 				console.log("Couldn't get geojson")
@@ -184,11 +210,11 @@ var geojsonMarkerOptions = {
 		},
 		onAdd: function(){
 			var container = L.DomUtil.create("div", 'legend-container');
-			html = "<div id='controlHeader' align='center'><h4 id='speciesHeader'>Hello!</h4><br /><h5 id='currentTime' ></h5><br />"
+			html = "<div id='controlHeader' align='center'><h4 id='speciesHeader'></h4><br /><h5 id='currentTime' ></h5><br />"
 			
 			html += "</div><br />"
-			html += "<input type='range' min='0' max='100' step='1'id='symbolSizeInput'/>"
-			html += "<div id='legend' class='col-xs-6'></div>"
+			html += "<input type='range' min='0' max='100' step='1'id='symbolSizeInput' data-toggle='tooltip' title='Resize Proportional Symbols'/>"
+			html += "<div id='legend' class='col-xs-6'></div> <br />"
 			$(container).append(html)
 			//kill any mouse event listeners on the map
             $(container).on('mousedown dblclick mousewheel', function(e){
@@ -200,28 +226,94 @@ var geojsonMarkerOptions = {
 	})
 	globals.map.addControl(new legendControl())
 	
-} //end of init map function
+	var mapControls = L.Control.extend({
+		option: {
+			position: "topright"
+		},
+		onAdd: function(){
+			console.log("adding map controls.")
+			var container = L.DomUtil.create("div", "control-container")
+			html = "<div id='mapControls'>"
+			html += "<h6 align='center' id='control-label'>Map Controls</h6><br/>"
+			html += "<input type='checkbox' id='icesheetsInput' name='icesheets'/>"
+			html += "<label style='display:inline; font-weight: 500' for='icesheets'>Overlay Icesheets</label><br />" 
+			html += "<span id='download' class='glyphicon glyphicon-download'></span>"
+			html += "<span id='clearMap' class='glyphicon glyphicon-remove'></span>"
+			html += "</div>"
+			$(container).append(html)
+			$(container).on('mousedown dblclick mousewheel', function(e){
+			L.DomEvent.stopPropagation(e)})
+			
+			$(container).css({'opacity':0.25})
+			
+			//event handlers --> here because of onAdd
+			$(container).mouseover(function(){
+				$(this).css({'opacity': 1, 'height': '70px'})
+			})
+			$(container).mouseout(function(){
+				$(this).css({'opacity': 0.25, 'height': '55px'})
+			})
+			
+			//split apart the container to facilitate events
+			mainDiv = $(container).children()[0]
+			mainDivElements = $(mainDiv).children()//array of dom elements
+			iceCheck = mainDivElements[2] //checkbox for overlay
+			iceCheckLabel = mainDivElements[3]
+			clearMap = mainDivElements[6]
+			downloadMap = mainDivElements[5]
+			
+			$(clearMap).css({'font-size': '15px'})
+			$(downloadMap).css({'font-size': '15px'})
+			$(iceCheckLabel).css({'font-size': '12px'})
+			$(iceCheck).prop('checked', true)
+			
+			//click events
+			$(clearMap).click(function(){
+				clear()
+			})
+			$(downloadMap).click(function(){
+				getDownload();
+			})
+			//clear map style events
+			$(clearMap).mouseover(function(){
+				$(this).css({'font-size': '25px', 'color': globals.colors.red})
+			})
+			$(clearMap).mouseout(function(){
+				$(this).css({'font-size': '15px', 'color': 'black'})
+			})
+			
+			//download map style events
+			$(downloadMap).mouseover(function(){
+				$(this).css({'font-size': '25px', 'color': 'green'})
+			})
+			$(downloadMap).mouseout(function(){
+				$(this).css({'font-size': '15px', 'color': 'black'})
+			})
+			
+			
+			
+			//ice overlay events
+			$(iceCheck).change(function(){
+				isChecked = $(this).prop("checked")
+				globals.displayIcesheets = isChecked
+				if (isChecked){
+					showIceSheets(globals.currentTime);
+				}
+				if (!isChecked){
+					hideIceSheets();
+				}
+			})
+			
+			return container
+		}
+	})
+	globals.map.addControl(new mapControls())
 	
+} //end of init map function
+
 function setViewForTaxon(){
-	// //get the arithmetic mean of the points and set the view so that we see all points at once
-	// runningLat = 0
-	// runningLng = 0
-	// num = 0
-	// index = 0
-	// features = globals.taxonData.features
-	// while (index < features.length){
-		// item = features[index]
-		// var lat = +item.geometry.coordinates[0]
-		// var lng = +item.geometry.coordinates[1]
-		// runningLat += lat
-		// runningLng += lng
-		// num += 1
-		// index += 1
-	// }
-	// var meanLat = runningLat / num
-	// var meanLng = runningLng / num
-// 			
-	// globals.map.setView([meanLng, meanLat])
+	//zoom to layer a la ArcMap
+	return
 }
 
 function updateTaxonMetadataPanel(){
@@ -417,10 +509,10 @@ thisLine = svg.append('path')
 
  var data = [{
     "x": 0,
-"y": timeScale(0)
+"y": timeScale(globals.currentTime)
   }, {
     "x": width,
-"y": timeScale(0)
+"y": timeScale(globals.currentTime)
   }];
 
 
@@ -769,14 +861,19 @@ function symbolClick(e){
 function updateSymbol(site){
 	globals.map.eachLayer(function (layer, feature){
 		if (layer.feature){
-			if (layer.feature.properties.Site == site){
-				layer.bringToFront(); // not sure if this is working?
-				layer.setStyle({'fillColor': globals.colors.red, "fillOpacity": 0.5})
-				
-			}else{
-				layer.setStyle({'fillColor' : globals.colors.blue, "fillOpacity": 0.5})
+			if (layer.feature.properties.Age > 0){
 				layer.bringToBack()
-			}
+				//pass ice data
+			}else{
+				if (layer.feature.properties.Site == site){
+					layer.bringToFront(); // not sure if this is working?
+					layer.setStyle({'fillColor': globals.colors.red, "fillOpacity": 0.5})
+					layer.openPopup()
+				}else{
+					layer.setStyle({'fillColor' : globals.colors.blue, "fillOpacity": 0.5})
+					layer.bringToBack()
+				}
+		}
 		}
 	})
 }
@@ -805,42 +902,49 @@ function changeTimeslice(){
 	            if (globals.currentTime == 0 && r == 0){
 	            	//pass
 	            }else{
-		           	if (r == 0){
-		           		rScaled = 0
-		           	}else{
-		           		rScaled = calcSymbolRadius(r)
-		           	}
-		            //sometimes the pull timeline will be out of bounds, so fail gracefully
-		            if (isNaN(rScaled)){
-		            	rScaled = 2
-		            	layer.setStyle({'color' : 'black'})
+	            	if (props.Age > 0){
+	            		layer.bringToBack() //put ice in the back
+	            	}else{
+	            		
 		            	
+			           	if (r == 0){
+			           		rScaled = 0
+			           	}else{
+			           		rScaled = calcSymbolRadius(r)
+			           	}
+			            //sometimes the pull timeline will be out of bounds, so fail gracefully
+			            if (isNaN(rScaled)){
+			            	rScaled = 2
+			            	layer.setStyle({'color' : 'black'})
+			            	
+			            }
+			            if (rScaled == 0){
+			            	
+			            	rScaled = 2
+			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
+			            	
+			            }else{
+			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
+			            }
+			            layer.setRadius(rScaled)
+			            var displayVal = Math.round(r * 100) / 100
+			           if (props.Type == "Pollen"){
+			           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
+		  
+					           }else if (props.Type == "Mammals"){
+			           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
+			           }else{
+			           	popupContent = "<div>No Content Available</div>"
+			           }
+				 		layer.bindPopup(popupContent)
 		            }
-		            if (rScaled == 0){
-		            	
-		            	rScaled = 2
-		            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
-		            	
-		            }else{
-		            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
-		            }
-		            layer.setRadius(rScaled)
-		            var displayVal = Math.round(r * 100) / 100
-		           if (props.Type == "Pollen"){
-		           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
-	  
-				           }else if (props.Type == "Mammals"){
-		           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
-		           }else{
-		           	popupContent = "<div>No Content Available</div>"
-		           }
-			 		layer.bindPopup(popupContent)
-	            }
+	            }//end else
 	           
 
 	        };
 	})
 	updateLegend() // reflect changes in the legend
+	showIceSheets(globals.currentTime) //show the nearest icesheet boundary
 };
 function interpolateSymbolValue(props, year){
 	//changes the symbol sizes when the timeslice is between two defined intervals
@@ -896,11 +1000,11 @@ function interpolateSymbolValue(props, year){
 
 function clear(){
 	//clears the d3 diagram and the layers on the map
-	
 	//remove map layers
 	globals.map.eachLayer(function(layer, feature){
 		if (layer.feature){
-			globals.map.removeLayer(layer);
+				globals.map.removeLayer(layer);
+			
 		}
 	})
 	for (line in globals.diagram.lines){
@@ -923,6 +1027,7 @@ function clear(){
 	globals.taxonomy.itisSkip = 0
 	$("#symbolSizeInput").val(50)
 	globals.symbolMultiplier = 50
+	$("#taxonSearch").val("")
 	
 	
 }
@@ -1015,8 +1120,14 @@ function createLegend(){
 	//find symbols sizes
 	rad = []
 	globals.map.eachLayer(function(layer, feature){
-		r = layer._radius
-		rad.push(r)
+		if (layer.Age > 0){ //dont include ice
+			//basically pass
+			
+		}else{
+			r = layer._radius
+			rad.push(r)
+		}
+
 	})
 	rSort = rad.sort()
 	
@@ -1036,7 +1147,7 @@ function createLegend(){
 	rad2 = Math.sqrt(10 * globals.symbolMultiplier)
 	rad3 = Math.sqrt(20 * globals.symbolMultiplier)
 	
-	divHeight = $(".legend-container").height()
+	divHeight = $(".legend-container").height() * 1.25
 	
 	var suffix
 	if (globals.taxonType == "Pollen"){
@@ -1140,4 +1251,80 @@ function initializeLegendChange(){
 
 
 
+function loadIceSheetData(){
+	//loads the ice sheet file into the map --> happens on init
+	$.ajax("assets/data/icesheets.json", {
+		beforeSend: function(){
+			console.log("Getting ice sheet data.")
+		},
+		dataType:"json",
+		success: function(response){
+			console.log("Successfully got ice sheet data.")
+			globals.icesheetsData = response
+			addIceSheetData();
+			console.log(response)
+		}, 
+		error: function(xhr, status, error){
+			console.log('ERROR!')
+		}
+	})
+}
+
+function addIceSheetData(){
+		//add the data to the map
+	 iceData = L.geoJson(globals.icesheetsData, {
+	 	style: inactiveIceOptions,
+	 }).addTo(globals.map)
+	 iceData.bringToBack()
+}
+
+function getClosestIceSheetAge(age){
+	//make an array of all possible ages the first time
+	if (!globals.icesheetAges){
+		globals.icesheetAges = []
+		globals.icesheetAges.push(0)
+		globals.map.eachLayer(function(layer, feature){
+			if (layer.feature){
+				if (layer.feature.properties.Age > 0){
+					globals.icesheetAges.push(layer.feature.properties.Age )
+				}
+			}
+		})
+	}
+	//get the boundary conditions
+	//get the closest value in the array
+	cur = globals.icesheetAges[0]
+	t = age
+	globals.icesheetAges.forEach(function(val){
+		if (Math.abs(val - t) < Math.abs(val - cur)){
+			cur = val
+		}
+	})
+	return cur
+}
+
+function showIceSheets(age){
+	closestAge = getClosestIceSheetAge(age)
+	globals.map.eachLayer(function(layer, feature){
+		if (layer.feature){
+			if (layer.feature.properties.Age > 0){
+				if (layer.feature.properties.Age == closestAge){
+					layer.setStyle(iceOptions)
+				}else{
+					layer.setStyle(inactiveIceOptions)
+				}
+			}
+		}
+	})
+}
+
+function hideIceSheets(){
+		globals.map.eachLayer(function(layer, feature){
+		if (layer.feature){
+			if (layer.feature.properties.Age > 0){
+				layer.setStyle(inactiveIceOptions)
+			}
+		}
+	})
+}
 

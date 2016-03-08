@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
 		<title>Leaflet Lab</title>
-
+		<link rel="shortcut icon" href="favicon.ico" />
 		<!--stylesheets-->
 		<!-- Bootstrap css -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
@@ -16,10 +16,9 @@
 
 	<body>
 		<div class='row' id='mainHolder'>
-			<div id='titleRow' class='row col-sm-8'>
+			<div id='titleRow' class='row col-sm-12'>
 				<img id='neotomaImage' src="http://www.neotomadb.org/images/site_graphics/Packrat.png" ></img>
 				<span class='strong text-muted col-md-offset-1 col-sm-offset-3 col-xs-offset-4' id='title'>PaleoView</span>
-
 			</div>
 			
 			<div id='map' class='col-sm-8' >
@@ -32,6 +31,9 @@
 				<button id='search' class='btn-primary btn-lg'  data-toggle="tooltip" title="Search for data" data-placement="bottom"><span class='glyphicon glyphicon-search'</span></button>
 				</span>
 			<br />
+			<div id='map controls'>
+
+			</div>
 			  <ul class="nav nav-tabs">
 			    <li class="active"><a data-toggle="tab" href="#home" data-toggle="tooltip" title="View abundance diagram">Diagram</a></li>
 			    <li><a data-toggle="tab" href="#menu1" data-toggle="tooltip" title="Show site metadata">Site</a></li>
@@ -43,6 +45,7 @@
 			  	<div id="home" class=" tab-pane fade in active">
 			      <div id='diagram'>
 			     </div>
+
 			    </div>
 			    <div id="menu1" class="tab-pane fade">
 				<h5>Site Name: </h5><span class='text-muted' id='siteName'></span><br />
@@ -94,9 +97,17 @@
 		        <h4 class="modal-title">Welcome to PaleoView</h4><br />
 		      </div>
 		      <div class="modal-body">
-		        <h3 align="center">Explore</h3>
-		        <div  align="center" class='text-muted row' id='exploreSubtitle'><i>Click on a picture to get started!</i></div>
-
+		      	<p align='center'><h3 style='display:inline; color:#421313'>PaleoView</h3> is a proposed alternate front-end to the <a href='http://neotomadb.org'>Neotoma Paleoecological Database</a>.
+		      		It provides a cohesive visual interface for exploring trends in space, time, and abundance for a variety of taxa included in Neotoma. Using the temporal navigator in the righthand panel, 
+		      		users can gain an understanding of how the abundance of a particular taxonomic group has changed through time since the Last Glacial Maximum (~21,000 years before the present). 
+		      		The map interface shows a proportional symbol representation of individually dated sites with symbol radii scaled to the relative abundance of the chosen taxon at that point in time.
+		      		PaleoView represents a significant improvement over the <a href='http://apps.neotomadb.org/explorer'>existing Neotoma solution</a>, 
+		      		allowing to explore in greater detail -- yielding improved identification of patterns trends in both space and time.
+		      		To this end, PaleoView supports a greater range of interaction, 
+		      		including contextual overlays and resymbolization to improve data exploration.
+		      		</p>
+		        <h3 align="center">Explore the Data</h3>
+		        <p align='center'>Click on a picture to explore a particular grouping's fossil occurrences.</p>
 		        <div class='row' align='center' id='quickStartPictures'>
 		        <button id='explore1' class='startImg'><img src='http://phylopic.org/assets/images/submissions/5b6462a4-5676-4892-94b4-0cd3c342fe07.128.png'/></button>
 		        <button id='explore2' class='startImg'><img src='http://phylopic.org/assets/images/submissions/79332a4c-e2bf-447e-a38d-f59bdec98c37.128.png'/></button>
@@ -116,8 +127,13 @@
 		    <h3 align="center">Already an Expert?</h3>
 		    <div  align="center" class='text-muted row' id='exploreSubtitle'><i>Search for a taxon in the panel to the right.</i></div>
       </div>
-      
-
+      <hr />
+      <div id='footerRow'>
+      		<h5>Data Sources</h5> <br />
+      		<span class='text-muted'> <a href='http://neotomadb.org'>Neotoma Paleoecological Database</a> | Patrick Bartlein | <a href='http://itis.gov'>Integrated Taxonomic Information System </a>| <a href='http://phylopic.org'>PhyloPic </a></span> <br />
+		     <h5>Design and Implementation</h5> <br />
+		     <span class='text-muted'>Scott Farley | <a href='http://scottsfarley.com'>scottsfarley.com</a></span>
+	</div>
 		      <div class="modal-footer">
 		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 		      </div>
