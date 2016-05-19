@@ -160,7 +160,7 @@ var geojsonMarkerOptions = {
 	function loadSpeciesData(name){
 		fName = name.replace(" ", "_")
     fName = fName.toUpperCase()
-    console.log(fName)
+    alert(fName)
 		fName = fName + ".geojson"
 		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
