@@ -164,9 +164,8 @@ var geojsonMarkerOptions = {
 		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
 		$.ajax(file, {
-			dataType: "json",
+			//dataType: "json",
 			success: function(response){
-        console.log(response)
 				response = JSON.parse(response)
 				globals.taxonData = response //this is the geojson
 				globals.taxonName = name
@@ -176,7 +175,7 @@ var geojsonMarkerOptions = {
 				setViewForTaxon(); //this zooms to the map to the appropriate bounding box
 				updateTaxonMetadataPanel(); //this updates the taxonomy, etc on the panel
 				getTaxonPicture() //this gets the picture from phylopic
-				getTaxonInfo(); //gets taxonomy and common names from ITIS
+				//getTaxonInfo(); //gets taxonomy and common names from ITIS
 				createLegend() // creates a d3 legend
 				initializeLegendChange(); //allows for resymbolization
 				globals.geojsonFile = file //facilitates dataset download
