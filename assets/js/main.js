@@ -160,7 +160,7 @@ var geojsonMarkerOptions = {
 	function loadSpeciesData(name){
 		fName = name.replace(" ", "_")
 		fName = fName + ".geojson"
-		file = "assets/data/geojson/" + fName
+		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
 		$.ajax(file, {
 			//dataType: "json",
