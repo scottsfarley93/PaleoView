@@ -9,9 +9,9 @@
 //global behaviors
 var drag = d3.behavior.drag();
 $(document).ready(function(){
-    $('[data-toggle="tooltip"]').tooltip(); 
+    $('[data-toggle="tooltip"]').tooltip();
 });
-		
+
 
 //global variables
 var globals = {};
@@ -80,10 +80,10 @@ var geojsonMarkerOptions = {
              }
         });
 		//loads the list of data files available
-		$.ajax("assets/data/listfile.csv",{
+		$.ajax("PaleoView/assets/data/listfile.csv",{
 			success: loadSpeciesList
 		})
-		
+
 		//click fires the event to get data from the server
 		//////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////
@@ -93,14 +93,14 @@ var geojsonMarkerOptions = {
 		})
 		//////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////
-		
+
 		//initialize the map
-		initMap(); 
-		
-		
+		initMap();
+
+
 		//open model on program start if not already dismissed
-		$('#startModal').modal('show')     
-		
+		$('#startModal').modal('show')
+
 		//bind exploration click events
 		$("#explore1").click(function(){
 			loadSpeciesData("Bison Bison")
@@ -108,7 +108,7 @@ var geojsonMarkerOptions = {
 			$("#taxonSearch").val("Bison Bison")
 			globals.currentTime = 0
 		})
-		
+
 		$("#explore2").click(function(){
 			loadSpeciesData("Picea")
 			$("#startModal").modal("hide")
@@ -116,8 +116,8 @@ var geojsonMarkerOptions = {
 			globals.currentTime = 12000
 			globals.defaultAttribute = "13000-12000"
 		})
-		
-		
+
+
 		$("#explore3").click(function(){
 			loadSpeciesData("Cyperace")
 			$("#startModal").modal("hide")
@@ -127,11 +127,11 @@ var geojsonMarkerOptions = {
 		})
 		//load ice sheet data here because it takes a hot minute
 		loadIceSheetData();
-		
-		
+
+
 	})
-	
-	
+
+
 	function loadSpeciesList(response){
 		//called when species list is returned
 		//handles autocomplete
@@ -143,9 +143,9 @@ var geojsonMarkerOptions = {
 					if (item != '"'){
 						culledListing.push(item)
 					}
-					
+
 				})
-				
+
 				$('#taxonSearch').typeahead({
 					  hint: true,
 					  highlight: true,
@@ -156,11 +156,12 @@ var geojsonMarkerOptions = {
 					  source: substringMatcher(culledListing)
 					});
 			}
-			
+
 	function loadSpeciesData(name){
 		fName = name.replace(" ", "_")
+    fName = fName.toUpperCase()
 		fName = fName + ".geojson"
-		file = "assets/data/geojson/" + fName
+		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
 		$.ajax(file, {
 			//dataType: "json",
@@ -184,12 +185,12 @@ var geojsonMarkerOptions = {
 				updateLegend() //makes sure the legend is correct when transitioning between species
 			}, error: function(xhr, status, error){
 				console.log("Couldn't get geojson")
-				console.log(xhr.responseText)				
+				console.log(xhr.responseText)
 		}, beforeSend: function(){
 			}
 		})
 	}
-	
+
 	function initMap(){
 				//create a map
 	globals.map = L.map('map', { zoomControl:false }).setView([40.82, -122.2], 4);
@@ -200,9 +201,9 @@ var geojsonMarkerOptions = {
 		subdomains: '1234'
 	});
 	mapTiles.addTo(globals.map) //this adds it to the map
-	
-	
-	
+
+
+
 	//add a container because the lab says to
 	var legendControl = L.Control.extend({
 		options: {
@@ -211,7 +212,7 @@ var geojsonMarkerOptions = {
 		onAdd: function(){
 			var container = L.DomUtil.create("div", 'legend-container');
 			html = "<div id='controlHeader' align='center'><h4 id='speciesHeader'></h4><br /><h5 id='currentTime' ></h5><br />"
-			
+
 			html += "</div><br />"
 			html += "<input type='range' min='0' max='100' step='1'id='symbolSizeInput' data-toggle='tooltip' title='Resize Proportional Symbols'/>"
 			html += "<div id='legend' class='col-xs-6'></div> <br />"
@@ -225,7 +226,7 @@ var geojsonMarkerOptions = {
 		}
 	})
 	globals.map.addControl(new legendControl())
-	
+
 	var mapControls = L.Control.extend({
 		option: {
 			position: "topright"
@@ -236,16 +237,16 @@ var geojsonMarkerOptions = {
 			html = "<div id='mapControls'>"
 			html += "<h6 align='center' id='control-label'>Map Controls</h6><br/>"
 			html += "<input type='checkbox' id='icesheetsInput' name='icesheets'/>"
-			html += "<label style='display:inline; font-weight: 500' for='icesheets'>Overlay Icesheets</label><br />" 
+			html += "<label style='display:inline; font-weight: 500' for='icesheets'>Overlay Icesheets</label><br />"
 			html += "<span id='download' class='glyphicon glyphicon-download'></span>"
 			html += "<span id='clearMap' class='glyphicon glyphicon-remove'></span>"
 			html += "</div>"
 			$(container).append(html)
 			$(container).on('mousedown dblclick mousewheel', function(e){
 			L.DomEvent.stopPropagation(e)})
-			
+
 			$(container).css({'opacity':0.25})
-			
+
 			//event handlers --> here because of onAdd
 			$(container).mouseover(function(){
 				$(this).css({'opacity': 1, 'height': '70px'})
@@ -253,7 +254,7 @@ var geojsonMarkerOptions = {
 			$(container).mouseout(function(){
 				$(this).css({'opacity': 0.25, 'height': '55px'})
 			})
-			
+
 			//split apart the container to facilitate events
 			mainDiv = $(container).children()[0]
 			mainDivElements = $(mainDiv).children()//array of dom elements
@@ -261,12 +262,12 @@ var geojsonMarkerOptions = {
 			iceCheckLabel = mainDivElements[3]
 			clearMap = mainDivElements[6]
 			downloadMap = mainDivElements[5]
-			
+
 			$(clearMap).css({'font-size': '15px'})
 			$(downloadMap).css({'font-size': '15px'})
 			$(iceCheckLabel).css({'font-size': '12px'})
 			$(iceCheck).prop('checked', true)
-			
+
 			//click events
 			$(clearMap).click(function(){
 				clear()
@@ -281,7 +282,7 @@ var geojsonMarkerOptions = {
 			$(clearMap).mouseout(function(){
 				$(this).css({'font-size': '15px', 'color': 'black'})
 			})
-			
+
 			//download map style events
 			$(downloadMap).mouseover(function(){
 				$(this).css({'font-size': '25px', 'color': 'green'})
@@ -289,9 +290,9 @@ var geojsonMarkerOptions = {
 			$(downloadMap).mouseout(function(){
 				$(this).css({'font-size': '15px', 'color': 'black'})
 			})
-			
-			
-			
+
+
+
 			//ice overlay events
 			$(iceCheck).change(function(){
 				isChecked = $(this).prop("checked")
@@ -303,12 +304,12 @@ var geojsonMarkerOptions = {
 					hideIceSheets();
 				}
 			})
-			
+
 			return container
 		}
 	})
 	globals.map.addControl(new mapControls())
-	
+
 } //end of init map function
 
 function setViewForTaxon(){
@@ -320,7 +321,7 @@ function updateTaxonMetadataPanel(){
 	//updates the taxon info on the right side
 	$("#speciesName").text(globals.taxonName)
 	$("#speciesHeader").text(globals.taxonName)
-	
+
 }
 
 function addGeojsonToMap(){
@@ -330,7 +331,7 @@ function addGeojsonToMap(){
 			// attVal = feature.properties[globals.defaultAttribute] //this is the default value for name of the attribute
 			 // r = calcSymbolRadius(attVal); //set the appropriate radius
 			 // geojsonMarkerOptions.radius = r //set the radius in the options --> done with prop symbols now
-			 
+
 			 displayVal = Math.round(feature.properties[globals.defaultAttribute] / 100) * 100
 			console.log(feature.properties[globals.defaultAttribute] )
 			 circle =  L.circleMarker(latlng, geojsonMarkerOptions)
@@ -352,7 +353,7 @@ function addGeojsonToMap(){
 			 }
 	}).addTo(globals.map)
 
-	
+
 }
 function drawDiagram(){
 //draws the pollen diagram
@@ -391,7 +392,7 @@ for(var i =0; i< l; i++){
 			lineVals.push({'value' : +value, 't': +age, 'Site': site})
 		}
 	}
-	
+
 }
 //lineVals.push({'value' : 0, 't': -1}); //and end to facilitate filling
 	allVals.push(lineVals)
@@ -405,14 +406,14 @@ var timeScale = d3.scale.linear()
 	.range([0, height])
 var valScale = d3.scale.linear()
 	.range([0, width - 25])
-	
+
 	//finish mapping values to points
 timeScale.domain([0, maxAge])
 valScale.domain([0, maxVal])
 
 globals.diagram.valScale = valScale
 globals.diagram.timeScale = timeScale
-	
+
 //create the axes
 var xAxis = d3.svg.axis()
 	.scale(valScale)
@@ -425,7 +426,7 @@ var yAxis = d3.svg.axis()
 //set up the path function --> scale the values into the diagram constraints
 var line = d3.svg.line()
 //.interpolate("monotone")
-.x(function(d){ 
+.x(function(d){
 	return +valScale(+d.value)})
 .y(function(d){
 	return +timeScale(+d.t)})
@@ -436,14 +437,14 @@ var svg = d3.select("#diagram").append("svg")
 .attr('width', width + globals.diagram.margins.left + globals.diagram.margins.right)
 .append('g')
 .attr('transform', 'translate(' + globals.diagram.margins.left + "," + globals.diagram.margins.top + ")")
-	
-var div = d3.select("body").append("div")	
-.attr("class", "tooltip")				
+
+var div = d3.select("body").append("div")
+.attr("class", "tooltip")
 .style("opacity", 0)
 .append('text')
 
 
-//draw the path	
+//draw the path
 for (l in allVals){
 	lineVals = allVals[l]
 	site = lineVals[0]['Site']
@@ -490,7 +491,7 @@ thisLine = svg.append('path')
 }
 
 
-	
+
 //add a line to depict the current time view
  globals.diagram.timelineFunction = d3.svg.line()
     .x(function(d) {
@@ -516,7 +517,7 @@ thisLine = svg.append('path')
   }];
 
 
-	
+
 
 	//setup the axes
 svg.append('g')
@@ -542,18 +543,18 @@ globals.diagram.timeLine = svg.append("path")
 	.attr("fill", "red")
 	.attr('class', 'draggable')
 	    .call(drag)
-    
+
    //add some extra labels for context
 	xlabel = svg.append('text')
 		.attr('x', 0)
 		.attr('y', height + 35)
-	
+
 	if (globals.taxonType == "Pollen"){
 		xlabel.text("Relative Abundance")
 	}else if (globals.taxonType == "Mammals"){
 		xlabel.text("Dated Individuals")
 	}
-	
+
 	timelabel1 = svg.append('text')
 		.attr('x', width-25)
 		.attr('y', timeScale(19000))
@@ -575,8 +576,8 @@ function dragmove() {
     isDown = false;
     m3 = d3.mouse(this);
 	var newArray = [ {x: 0, y: m3[1]},
-             {x: globals.diagram.width, y: m3[1]} ];  
-    globals.diagram.timeLine.attr('d', globals.diagram.timelineFunction(newArray)); 
+             {x: globals.diagram.width, y: m3[1]} ];
+    globals.diagram.timeLine.attr('d', globals.diagram.timelineFunction(newArray));
    	//this is the current timeslice
    	globals.currentTime = globals.diagram.timeScale.invert(+m3[1])
    	if (globals.currentTime < 0){
@@ -613,9 +614,9 @@ function getTaxonInfo(){
 					$("#reference").text(firstItem['author'])
 					globals.tsn = firstItem['tsn'] // this is the itis id
 					getTaxonParent(globals.tsn)
-					
+
 				}
-				
+
 			},
 			error: function(xhr, status, error){
 				console.log(xhr.responseText)
@@ -673,10 +674,10 @@ function getTaxonParent(itis){
 }
 
 function getTaxonPicture(){
-	return 
+	return
 	// //make api call to get identifying string
 	// URIName = encodeURIComponent(globals.taxonName)
-// 	
+//
 	// URI = "http://phylopic.org/api/a/name/search?text=" + URIName
 	// $.ajax(URI, { // this gets the uid for the species
 		// success: function(response){
@@ -690,7 +691,7 @@ function getTaxonPicture(){
 			// console.log(error)
 		// },
 		// dataType: "json"
-// 		
+//
 	// })
 	// function getPictureLocation(uid){
 		// URI = "http://phylopic.org/api/a/name/" + uid + "/images?options=credit+svgFile+canonicalName"
@@ -717,11 +718,11 @@ function getTaxonPicture(){
 								// break
 							// }
 						// }
-// 						
+//
 					// }
 					// if (!picFound){ // look in a couple other places
 						// for (pic in result['other']){
-// 							
+//
 							// thisPic = result['other'][pic]
 							// if (thisPic['svgFile'] != null){
 								// picFound = true
@@ -729,7 +730,7 @@ function getTaxonPicture(){
 								// break
 							// }
 						// }
-// 						
+//
 					// }
 			// if (!picFound){ // try other formats (png)
 						// for (pic in result['same']){
@@ -739,7 +740,7 @@ function getTaxonPicture(){
 								// pic = thisPic['pngFile']['url']
 								// break
 							// }
-						// }	
+						// }
 					// }
 			// if (!picFound){ // try other formats (png)
 						// for (pic in result['supertaxa']){
@@ -749,17 +750,17 @@ function getTaxonPicture(){
 								// pic = thisPic['pngFile']['url']
 								// break
 							// }
-						// }	
+						// }
 					// }
-// 					
+//
 					// if (!picFound){ //if we get to this point, we've exhausted all of our other options
 						// $("#pic").html("<p>Couldn't find a suitable picture.</p>")
 						// console.log("Couldn't find picture")
 					// }else{
 						// //get the first picture listed
-						// setPicture(pic)	
+						// setPicture(pic)
 					// }
-// 
+//
 				// }
 			// },
 			// error: function(error){
@@ -791,7 +792,7 @@ function updateSiteInformationPanel(site){
 				s = lngW + "," + latS + "," + lngE + "," + latN
 				break
 			}
-		}		
+		}
 		$.ajax(URI, {
 			data: {
 				sitename : site.substring(0, 5) + "%",
@@ -813,7 +814,7 @@ function updateSiteInformationPanel(site){
 					$("#siteLat").text(latN)
 					$("#siteLng").text(lngW)
 					$("#siteID").text(thisSite['SiteID'])
-					
+
 				}else{
 					console.log("Couldn't get data from neotoma")
 				}
@@ -827,9 +828,9 @@ function updateSiteInformationPanel(site){
 			}
 		})
 	}
-	
+
 	getSiteFromNeotoma(site)
-	
+
 	//get more contextual information
 	minYear = getMinYear(site)
 	maxYear = getMaxYear(site)
@@ -840,7 +841,7 @@ function updateSiteInformationPanel(site){
 }
 
 function updateLine(site){
-	
+
 	for (line in globals.diagram.lines){
 		thisLine = globals.diagram.lines[line];
 		thisLine.style('opacity', 0.2)
@@ -885,7 +886,7 @@ function calcSymbolRadius(val){
 	var scaleFactor = globals.symbolMultiplier;
 	var area = Number(val) * scaleFactor; //cast to number
 	var radius = Math.sqrt(area/Math.PI);
-	return radius	
+	return radius
 }
 
 function changeTimeslice(){
@@ -905,8 +906,8 @@ function changeTimeslice(){
 	            	if (props.Age > 0){
 	            		layer.bringToBack() //put ice in the back
 	            	}else{
-	            		
-		            	
+
+
 			           	if (r == 0){
 			           		rScaled = 0
 			           	}else{
@@ -916,13 +917,13 @@ function changeTimeslice(){
 			            if (isNaN(rScaled)){
 			            	rScaled = 2
 			            	layer.setStyle({'color' : 'black'})
-			            	
+
 			            }
 			            if (rScaled == 0){
-			            	
+
 			            	rScaled = 2
 			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0})
-			            	
+
 			            }else{
 			            	layer.setStyle({'color' : 'black', 'fillOpacity' : 0.5})
 			            }
@@ -930,7 +931,7 @@ function changeTimeslice(){
 			            var displayVal = Math.round(r * 100) / 100
 			           if (props.Type == "Pollen"){
 			           		var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Time Slice Value: </b><span class='text-muted'>" + displayVal + "%</span>"
-		  
+
 					           }else if (props.Type == "Mammals"){
 			           	var popupContent = "<div><b>Site Name: </b><span class='text-muted'>" + siteName + "</span><br /><b>Dated Individuals: </b><span class='text-muted'>" + displayVal + " </span>"
 			           }else{
@@ -939,7 +940,7 @@ function changeTimeslice(){
 				 		layer.bindPopup(popupContent)
 		            }
 	            }//end else
-	           
+
 
 	        };
 	})
@@ -948,11 +949,11 @@ function changeTimeslice(){
 };
 function interpolateSymbolValue(props, year){
 	//changes the symbol sizes when the timeslice is between two defined intervals
-	
+
 	if (year == 0){//fixes the default to zero behavior
 		return props[globals.defaultAttribute]
 	}
-	
+
 	upperYear = Math.ceil(year/1000)*1000
 	try{
 		// if (upperYear > 22000){
@@ -1004,7 +1005,7 @@ function clear(){
 	globals.map.eachLayer(function(layer, feature){
 		if (layer.feature){
 				globals.map.removeLayer(layer);
-			
+
 		}
 	})
 	for (line in globals.diagram.lines){
@@ -1028,8 +1029,8 @@ function clear(){
 	$("#symbolSizeInput").val(50)
 	globals.symbolMultiplier = 50
 	$("#taxonSearch").val("")
-	
-	
+
+
 }
 $("#testClear").click(function(){
 	clear()
@@ -1039,7 +1040,7 @@ $("#testClear").click(function(){
 
 function getMinYear(sitename){
 	for (item in globals.taxonData.features){
-	if (globals.taxonData.features[item].properties['Site'] == sitename){				
+	if (globals.taxonData.features[item].properties['Site'] == sitename){
 	site = globals.taxonData.features[item].properties
 				for (prop in site){
 					if (prop != "Site" && prop != "Type"){
@@ -1047,7 +1048,7 @@ function getMinYear(sitename){
 							continue;
 						}else{
 							//find the age at which it is no loger 0
-							keyList = Object.keys(site) 
+							keyList = Object.keys(site)
 							i = keyList.indexOf(prop) //+ 2 //correct for Type and Site as properties
 							age = globals.ages[i]
 							return age
@@ -1116,13 +1117,13 @@ $("#download").click(function(){
 
 //legend stuff
 function createLegend(){
-	//creates a legend that shows the size of symbols static through time.  
+	//creates a legend that shows the size of symbols static through time.
 	//find symbols sizes
 	rad = []
 	globals.map.eachLayer(function(layer, feature){
 		if (layer.Age > 0){ //dont include ice
 			//basically pass
-			
+
 		}else{
 			r = layer._radius
 			rad.push(r)
@@ -1130,7 +1131,7 @@ function createLegend(){
 
 	})
 	rSort = rad.sort()
-	
+
 	//find total maximum
 	totalMax = 0 //we don't care about anything except this maximum value
 	for (item in globals.taxonData.features){
@@ -1141,14 +1142,14 @@ function createLegend(){
 			}
 		}
 	}
-	
+
 	//these are the circle radii
 	rad1 = Math.sqrt(5 * globals.symbolMultiplier)
 	rad2 = Math.sqrt(10 * globals.symbolMultiplier)
 	rad3 = Math.sqrt(20 * globals.symbolMultiplier)
-	
+
 	divHeight = $(".legend-container").height() * 1.25
-	
+
 	var suffix
 	if (globals.taxonType == "Pollen"){
 		suffix = "%"
@@ -1158,15 +1159,15 @@ function createLegend(){
 	//svg setup
 	globals.legend.legendHeight = divHeight / 2
 	globals.legend.legendWidth = $(".legend-control").width()
-	
+
 	//build the svg
 	globals.legend.canvas = d3.select("#legend").append("svg")
 		.attr('width', globals.legend.legendWidth)
 		.attr('height',globals.legend.legendHeight)
-	
+
 	//calculate bottom of circle
-	globals.legend.bottom = globals.legend.legendHeight/2 + rad3	
-	
+	globals.legend.bottom = globals.legend.legendHeight/2 + rad3
+
 	globals.legend.maxCircle = globals.legend.canvas
 		.append('circle')
 			.attr('cx', rad3)
@@ -1175,12 +1176,12 @@ function createLegend(){
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
 			.style('stroke', 'black')
-			
+
 	globals.legend.maxText = globals.legend.canvas.append('text')
 		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 -20)
 		.text("20" + suffix)
-			
+
 	globals.legend.midCircle = globals.legend.canvas.append('circle')
 			.attr('cx', rad3)
 			.attr('cy', globals.legend.bottom - rad2)
@@ -1188,12 +1189,12 @@ function createLegend(){
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
 			.style('stroke', 'black')
-			
+
 	globals.legend.midText = globals.legend.canvas.append('text')
 		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 -5)
 		.text("10" + suffix)
-			
+
 	globals.legend.minCircle = globals.legend.canvas.append('circle')
 			.attr('cx', rad3)
 			.attr('cy',globals.legend.bottom  - rad1)
@@ -1201,22 +1202,22 @@ function createLegend(){
 			.style('fill', globals.colors.blue)
 			.style('opacity', 0.5)
 			.style('stroke', 'black')
-			
+
 	globals.legend.minText =globals.legend.canvas.append('text')
 		.attr('x', rad3 * 2)
 		.attr('y', globals.legend.legendHeight/2 +20)
 		.text("5" + suffix)
-			
+
 }
 
 function updateLegend(){
 	//update when symbol size changes
-	
+
 	//calculate new radii
 	rad1 = Math.sqrt(5 * globals.symbolMultiplier)
 	rad2 = Math.sqrt(10 * globals.symbolMultiplier)
 	rad3 = Math.sqrt(20 * globals.symbolMultiplier)
-	
+
 	//recalculate where the bottom is
 	globals.legend.bottom = globals.legend.legendHeight/2 + rad3
 	//set radii of circles and update the cy to make them all align at bottom
@@ -1224,8 +1225,8 @@ function updateLegend(){
 	globals.legend.midCircle.attr('r', rad2).attr('cy',globals.legend.bottom - rad2)
 	globals.legend.minCircle.attr('r', rad1).attr('cy',globals.legend.bottom - rad1)
 	//adjust text
-	
-	
+
+
 	globals.legend.maxText.attr('x', rad3 * 2)
 	globals.legend.midText.attr('x', rad3 * 2)
 	globals.legend.minText.attr('x', rad3 * 2)
@@ -1253,7 +1254,7 @@ function initializeLegendChange(){
 
 function loadIceSheetData(){
 	//loads the ice sheet file into the map --> happens on init
-	$.ajax("assets/data/icesheets.json", {
+	$.ajax("/PaleoView/assets/data/icesheets.json", {
 		beforeSend: function(){
 			console.log("Getting ice sheet data.")
 		},
@@ -1263,7 +1264,7 @@ function loadIceSheetData(){
 			globals.icesheetsData = response
 			addIceSheetData();
 			console.log(response)
-		}, 
+		},
 		error: function(xhr, status, error){
 			console.log('ERROR!')
 		}
@@ -1327,4 +1328,3 @@ function hideIceSheets(){
 		}
 	})
 }
-
