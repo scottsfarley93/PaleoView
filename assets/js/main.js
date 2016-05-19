@@ -183,6 +183,7 @@ var geojsonMarkerOptions = {
 				changeTimeslice() //enables popovers and scales the values --> must come after legend creation and map symbol creation
 				showIceSheets(globals.currentTime)
 				updateLegend() //makes sure the legend is correct when transitioning between species
+        console.log("End of succes function.")
 			}, error: function(xhr, status, error){
 				console.log("Couldn't get geojson")
 				console.log(xhr.responseText)
