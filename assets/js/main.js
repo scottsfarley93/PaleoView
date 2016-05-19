@@ -166,6 +166,7 @@ var geojsonMarkerOptions = {
 		$.ajax(file, {
 			dataType: "json",
 			success: function(response){
+        console.log(response)
 				response = JSON.parse(response)
 				globals.taxonData = response //this is the geojson
 				globals.taxonName = name
