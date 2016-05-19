@@ -190,6 +190,7 @@ var geojsonMarkerOptions = {
 				console.log("Couldn't get geojson")
 				console.log(xhr.responseText)
 		}, beforeSend: function(){
+      console.log(this.url)
 			}
 		})
 	}
