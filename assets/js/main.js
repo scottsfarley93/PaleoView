@@ -164,7 +164,7 @@ var geojsonMarkerOptions = {
 		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
 		$.ajax(file, {
-			//dataType: "json",
+			dataType: "json",
 			success: function(response){
 				response = JSON.parse(response)
 				globals.taxonData = response //this is the geojson
