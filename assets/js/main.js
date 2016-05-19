@@ -161,6 +161,7 @@ var geojsonMarkerOptions = {
 		fName = name.replace(" ", "_")
     fName = fName.toUpperCase()
 		fName = fName + ".geojson"
+    console.log(FName);
 		file = "/PaleoView/assets/data/geojson/" + fName
 		//file = globals.defaultGeojson
 		$.ajax(file, {
