@@ -80,7 +80,7 @@ var geojsonMarkerOptions = {
              }
         });
 		//loads the list of data files available
-		$.ajax("PaleoView/assets/data/listfile.csv",{
+		$.ajax("assets/data/listfile.csv",{
 			success: loadSpeciesList
 		})
 
