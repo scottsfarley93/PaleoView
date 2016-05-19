@@ -168,7 +168,6 @@ var geojsonMarkerOptions = {
 		$.ajax(file, {
 			//dataType: "json",
 			success: function(response){
-				response = JSON.parse(response)
 				globals.taxonData = response //this is the geojson
 				globals.taxonName = name
 				clear() // clears any previous searches
